@@ -46,7 +46,7 @@ area_max = 0
 contour_max = None
 for c in contours:
 a = cv2.contourArea(c)
-if a &gt; area_max and a &gt;= min_contour_area:
+if a > area_max and a >= min_contour_area:
 area_max = a
 contour_max = c
 
