@@ -8,10 +8,10 @@ from time import sleep
 
 picam2 = Picamera2()
 picam2.preview_configuration.main.size = (640, 480)
-picam2.preview_configuration.main.format = &quot;RGB888&quot;
+picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.controls.FrameRate = 30
 picam2.preview_configuration.align()
-picam2.configure(&quot;preview&quot;)
+picam2.configure("preview")
 picam2.start()
 
 ROI1 = [20, 170, 240, 220] # Left ROI
@@ -24,11 +24,11 @@ cv2.putText(img, label, (x1, max(0, y1 - 8)),
 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
 while True:
-frame = picam2.capture_array() # continuously capture frame
-draw_roi(frame, ROI1, label=&quot;ROI1 (Left)&quot;)
-draw_roi(frame, ROI2, label=&quot;ROI2 (Right)&quot;)
-cv2.imshow(&quot;Camera with Left/Right ROI&quot;, frame) # continuously display
-if cv2.waitKey(1) &amp; 0xFF == ord(&#39;q&#39;):
+frame = picam2.capture_array() 
+draw_roi(frame, ROI1, label="ROI1 (Left)")
+draw_roi(frame, ROI2, label="ROI2 (Right)")
+cv2.imshow("Camera with Left/Right ROI", frame)
+if cv2.waitKey(1) &amp; 0xFF == ord('q'):
 break
 cv2.destroyAllWindows()
 ```
@@ -64,20 +64,20 @@ leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWE
 LAB_BLACK_UPPER)
 rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER,
 LAB_BLACK_UPPER)
-draw_roi(frame, ROI1, label=&quot;ROI1 (Left)&quot;)
-draw_roi(frame, ROI2, label=&quot;ROI2 (Right)&quot;)
+draw_roi(frame, ROI1, label="ROI1 (Left)")
+draw_roi(frame, ROI2, label="ROI2 (Right)")
 if leftContour is not None:
 cv2.drawContours(frame, [leftContour], -1, (0, 255, 0), 2)
 if rightContour is not None:
 cv2.drawContours(frame, [rightContour], -1, (0, 255, 0), 2)
-cv2.putText(frame, f&quot;leftArea: {int(leftArea)}&quot;, (10, 30),
+cv2.putText(frame, f"leftArea: {int(leftArea)}", (10, 30),
 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-cv2.putText(frame, f&quot;rightArea: {int(rightArea)}&quot;, (10, 60),
+cv2.putText(frame, f"rightArea: {int(rightArea)}", (10, 60),
 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
 
-cv2.imshow(&quot;Wall Detect (Left/Right ROI)&quot;, frame)
+cv2.imshow("Wall Detect (Left/Right ROI)", frame)
 
-if cv2.waitKey(1) &amp; 0xFF == ord(&#39;q&#39;):
+if cv2.waitKey(1) &amp; 0xFF == ord('q'):
 break
 cv2.destroyAllWindows()
 ```
