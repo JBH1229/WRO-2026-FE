@@ -13,6 +13,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 **Age:** 15
 
 **Introduction:**
+Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am interested in airplanes, and enjoy learning about how they work in my free time. besides that, I enjoy playing video games with my friends. I am currently attending Notre Dame CSS.
 
 
 
@@ -20,7 +21,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 **Age:** 15
 
 **Introduction:**
-Hi, my name is Walter and I'm from Canada, this is my third WRO season,  I have many interests such as sports—my main sport being volleyball—and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
+Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests such as sports—my main sport being volleyball—and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
 
 
