@@ -1,7 +1,7 @@
 ## Simple foundation for our code
 
 ### Raspberry-Arduino Communication (Arduino)
-```py
+```cpp
 
 #include <Arduino.h>
 #include <ctype.h>
