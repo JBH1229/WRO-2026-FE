@@ -3,7 +3,84 @@ import numpy as np
 from picamera2 import Picamera2
 from time import sleep
 import time
+import serial
 
+# --- Arduino init ---
+arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+# Most Arduinos reset when the port opens; give it time to boot
+time.sleep(2.0)
+# Clear anything the Arduino might have printed during boot
+servo_value = 75
+motor_value = 1500
+#set default values
+arduino.reset_input_buffer()
+arduino.reset_output_buffer()
+def send_servo(value):
+    global servo_value
+    value = int(value)
+    if value < 0:
+        value = 0
+    if value > 180:
+        value = 180
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@S%b\n" %valueb)
+    servo_value = value
+def send_motor(value):
+    global motor_value
+    value = int(value)
+    if value < 1000:
+        value = 1000
+    if value > 2000:
+        value = 2000
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@M%b\n" %valueb)
+    motor_value = value
+def send_servo_assigned(value): 
+    global servo_value
+    value = int(value)
+    value = 75 + value
+    if value < 0:
+        value = 0
+    if value > 180:
+        value = 180
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@S%b\n" %valueb)
+    servo_value = value
+def send_motor_assigned(value):
+    global motor_value
+    value = int(value)
+    value = 1500 + value
+    if value < 1000:
+        value = 1000
+    if value > 2000:
+        value = 2000
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@M%b\n" %valueb)
+    motor_value = value
+def send_servo_relative(value): 
+    global servo_value
+    value = int(value)
+    value = servo_value + value
+    if value < 0:
+        value = 0
+    if value > 180:
+        value = 180
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@S%b\n" %valueb)
+    servo_value = value
+def send_motor_relative(value):
+    global motor_value
+    value = int(value)
+    value = motor_value + value
+    if value < 1000:
+        value = 1000
+    if value > 2000:
+        value = 2000
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@M%b\n" %valueb)
+    motor_value = value
+send_servo(servo_value)
+send_motor(motor_value)
 # --- Camera init ---
 picam2 = Picamera2()
 picam2.preview_configuration.main.size = (640, 480)
@@ -67,6 +144,8 @@ LAB_BLACK_UPPER = np.array([70, 255, 255], dtype=np.uint8)
 ENTER_TURN_THRESH = 550      # condition: leftArea OR rightArea < 550
 EXIT_GROW_THRESH  = 1200     # the side that dropped must grow > 1200
 EXIT_TIME_SEC     = 10.0      # AND at least 10 seconds must pass since entry
+TURN_LEFT_ANGLE   = 120
+TURN_RIGHT_ANGLE  = 30
 
 # --- Anti-false-trigger improvement ---
 # Require the enter condition to be true for N consecutive frames
@@ -80,7 +159,11 @@ mode = MODE_WALL_FOLLOW
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_trigger_side = None     # "left", "right", or "both"
 enter_counter = 0            # consecutive-frame counter for entering turning mode
+Kp = 0.0025
+Kd = 0.0015
 
+prev_error = 0
+last_time = time.monotonic()
 while True:
     frame = picam2.capture_array()  # RGB image
 
@@ -88,7 +171,8 @@ while True:
     rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
 
     now = time.monotonic()
-
+    #start moving (motor start)
+    send_motor(1600)
     # -------------------------
     # MODE / STATE MACHINE
     # -------------------------
@@ -114,6 +198,24 @@ while True:
                 turn_trigger_side = "left"
             else:
                 turn_trigger_side = "right"
+        else:
+            if (leftArea + rightArea) > 0:
+                error = (leftArea - rightArea) / (leftArea + rightArea)
+            else:
+                error = 0
+            current_time = now
+            dt = max(current_time - last_time, 1e-3)
+            derivative = (error - prev_error) / dt if dt > 0 else 0
+            output = (Kp * error) + (Kd * derivative)
+            correction = int(output)
+            if correction > 10:
+                correction = 10
+            elif correction < -10:
+                correction = -10
+            send_servo_assigned(correction)
+            print(correction)
+            prev_error = error
+            last_time = current_time
 
     else:  # MODE_CORNER_TURN
         elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
@@ -135,6 +237,13 @@ while True:
             turn_enter_time = None
             turn_trigger_side = None
             enter_counter = 0
+        else:
+            if turn_trigger_side == "left":
+                send_servo(TURN_LEFT_ANGLE)  # turn left
+            elif turn_trigger_side == "right":
+                send_servo(TURN_RIGHT_ANGLE)   # turn right
+            else:
+                send_servo(TURN_LEFT_ANGLE)  # default
 
     # -------------------------
     # Visualization
