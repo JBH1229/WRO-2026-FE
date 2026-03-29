@@ -159,8 +159,8 @@ mode = MODE_WALL_FOLLOW
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_trigger_side = None     # "left", "right", or "both"
 enter_counter = 0            # consecutive-frame counter for entering turning mode
-Kp = 0.0025
-Kd = 0.0015
+Kp = 0.25
+Kd = 0.15
 
 prev_error = 0
 last_time = time.monotonic()
