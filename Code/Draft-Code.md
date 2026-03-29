@@ -109,6 +109,7 @@ import cv2
 from picamera2 import Picamera2
 from time import sleep
 
+# --- Camera init ---
 picam2 = Picamera2()
 picam2.preview_configuration.main.size = (640, 480)
 picam2.preview_configuration.main.format = "RGB888"
@@ -117,23 +118,32 @@ picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
 
-ROI1 = [20, 170, 240, 220] # Left ROI
-ROI2 = [400, 170, 620, 220] # Right ROI
-def draw_roi(img, roi, color=(0, 255, 255), thickness=2, label=None):
-x1, y1, x2, y2 = roi
-cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
-if label:
-cv2.putText(img, label, (x1, max(0, y1 - 8)),
-cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+# --- ROIs (x1, y1, x2, y2)  ---
+ROI1 = [20, 170, 240, 220]     # Left ROI
+ROI2 = [400, 170, 620, 220]    # Right ROI
 
+def draw_roi(img, roi, color=(0, 255, 255), thickness=2, label=None):
+    x1, y1, x2, y2 = roi
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
+    if label:
+        cv2.putText(img, label, (x1, max(0, y1 - 8)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+
+# --- Continuously capture and display frame, with ROIs ---
 while True:
-frame = picam2.capture_array() 
-draw_roi(frame, ROI1, label="ROI1 (Left)")
-draw_roi(frame, ROI2, label="ROI2 (Right)")
-cv2.imshow("Camera with Left/Right ROI", frame)
-if cv2.waitKey(1) &amp; 0xFF == ord('q'):
-break
+    frame = picam2.capture_array()  # continuously capture frame
+
+    # show left and right ROI in the frame displayed
+    draw_roi(frame, ROI1, label="ROI1 (Left)")
+    draw_roi(frame, ROI2, label="ROI2 (Right)")
+
+    cv2.imshow("Camera with Left/Right ROI", frame)  # continuously display
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
 cv2.destroyAllWindows()
+picam2.stop()
 ```
 
 
@@ -141,46 +151,106 @@ cv2.destroyAllWindows()
 
 ```py
 
-kernel = np.ones((3, 3), np.uint8)
-mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
-mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-area_max = 0
-contour_max = None
-for c in contours:
-a = cv2.contourArea(c)
-if a > area_max and a >= min_contour_area:
-area_max = a
-contour_max = c
+import cv2
+import numpy as np
+from picamera2 import Picamera2
+from time import sleep
 
-if contour_max is not None:
-contour_max = contour_max + np.array([[[x1, y1]]], dtype=np.int32)
-return area_max, contour_max, mask
+# --- Camera init ---
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (640, 480)
+picam2.preview_configuration.main.format = "RGB888"
+picam2.preview_configuration.controls.FrameRate = 30
+picam2.preview_configuration.align()
+picam2.configure("preview")
+picam2.start()
+sleep(0.5)
 
-#  Requiress tuning 
-LAB_BLACK_LOWER = np.array([0, 0, 0], dtype=np.uint8)
+# --- ROIs (x1, y1, x2, y2) ---
+ROI1 = [20, 170, 240, 220]     # Left ROI
+ROI2 = [400, 170, 620, 220]    # Right ROI
+
+def draw_roi(img, roi, color=(0, 255, 255), thickness=2, label=None):
+    x1, y1, x2, y2 = roi
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
+    if label:
+        cv2.putText(img, label, (x1, max(15, y1 - 8)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+
+def find_wall_area_lab(frame_rgb, roi, lab_lower, lab_upper, min_contour_area=50):
+    """
+    Returns:
+      area_max: area of largest contour inside ROI (0 if none)
+      contour_max: contour points (shifted to full-frame coordinates) or None
+      mask_roi: binary mask for ROI (for optional debug display)
+    """
+    x1, y1, x2, y2 = roi
+    roi_bgr = frame_rgb[y1:y2, x1:x2]  # picamera2 gives RGB, but OpenCV ops below work either way for Lab conversion
+    lab = cv2.cvtColor(roi_bgr, cv2.COLOR_RGB2Lab)
+    lab = cv2.GaussianBlur(lab, (7, 7), 0)
+
+    mask = cv2.inRange(lab, lab_lower, lab_upper)
+
+    # Clean up noise
+    kernel = np.ones((3, 3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    area_max = 0
+    contour_max = None
+    for c in contours:
+        a = cv2.contourArea(c)
+        if a > area_max and a >= min_contour_area:
+            area_max = a
+            contour_max = c
+
+    # Shift contour to full-frame coordinates for drawing on the original frame
+    if contour_max is not None:
+        contour_max = contour_max + np.array([[[x1, y1]]], dtype=np.int32)
+
+    return area_max, contour_max, mask
+
+# --- LAB threshold for "black wall" (tune this!) ---
+# In Lab: L low = dark. Start conservative and tune by observing mask output.
+LAB_BLACK_LOWER = np.array([0,   0,   0], dtype=np.uint8)
 LAB_BLACK_UPPER = np.array([70, 255, 255], dtype=np.uint8)
 
+# --- Main loop ---
 while True:
-frame = picam2.capture_array() # RGB image
-leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER,
-LAB_BLACK_UPPER)
-rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER,
-LAB_BLACK_UPPER)
-draw_roi(frame, ROI1, label="ROI1 (Left)")
-draw_roi(frame, ROI2, label="ROI2 (Right)")
-if leftContour is not None:
-cv2.drawContours(frame, [leftContour], -1, (0, 255, 0), 2)
-if rightContour is not None:
-cv2.drawContours(frame, [rightContour], -1, (0, 255, 0), 2)
-cv2.putText(frame, f"leftArea: {int(leftArea)}", (10, 30),
-cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-cv2.putText(frame, f"rightArea: {int(rightArea)}", (10, 60),
-cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+    frame = picam2.capture_array()  # RGB image
 
-cv2.imshow("Wall Detect (Left/Right ROI)", frame)
+    # Detect left/right wall areas
+    leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
+    rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
 
-if cv2.waitKey(1) &amp; 0xFF == ord('q'):
-break
+    # Draw ROIs
+    draw_roi(frame, ROI1, label="ROI1 (Left)")
+    draw_roi(frame, ROI2, label="ROI2 (Right)")
+
+    # Draw largest contour (wall) if found
+    if leftContour is not None:
+        cv2.drawContours(frame, [leftContour], -1, (0, 255, 0), 2)
+    if rightContour is not None:
+        cv2.drawContours(frame, [rightContour], -1, (0, 255, 0), 2)
+
+    # Show numeric areas on the frame
+    cv2.putText(frame, f"leftArea: {int(leftArea)}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, f"rightArea: {int(rightArea)}", (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+
+    # Display main view
+    cv2.imshow("Wall Detect (Left/Right ROI)", frame)
+
+    # Optional: show masks for tuning thresholds (uncomment if needed)
+    # cv2.imshow("Left ROI Mask", leftMask)
+    # cv2.imshow("Right ROI Mask", rightMask)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
 cv2.destroyAllWindows()
+picam2.stop()
 ```
