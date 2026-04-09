@@ -90,7 +90,8 @@ picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
 sleep(0.5)
-
+turn_count = 0
+lap_count = 0
 # --- ROIs (x1, y1, x2, y2) ---
 ROI1 = [20, 170, 240, 220]     # Left ROI
 ROI2 = [400, 170, 620, 220]    # Right ROI
@@ -143,9 +144,9 @@ LAB_BLACK_UPPER = np.array([70, 255, 255], dtype=np.uint8)
 # --- Turning-state requirements (your rules) ---
 ENTER_TURN_THRESH = 550      # condition: leftArea OR rightArea < 550
 EXIT_GROW_THRESH  = 1200     # the side that dropped must grow > 1200
-EXIT_TIME_SEC     = 10.0      # AND at least 10 seconds must pass since entry
-TURN_LEFT_ANGLE   = 120
-TURN_RIGHT_ANGLE  = 30
+EXIT_TIME_SEC     = 5.0      # AND at least 10 seconds must pass since entry
+TURN_LEFT_ANGLE   = 100 # change lower if nessassary
+TURN_RIGHT_ANGLE  = 50 # change higher if nessassary
 
 # --- Anti-false-trigger improvement ---
 # Require the enter condition to be true for N consecutive frames
@@ -154,7 +155,10 @@ ENTER_CONFIRM_FRAMES = 5
 # --- Mode state ---
 MODE_WALL_FOLLOW = "WALL_FOLLOW"
 MODE_CORNER_TURN = "CORNER_TURN"
+prev_mode = ""
 mode = MODE_WALL_FOLLOW
+WALL_FOLLOW_MOTOR_VALUE = 1600
+CORNER_TURN_MOTOR_VALUE = 1570
 
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_trigger_side = None     # "left", "right", or "both"
@@ -164,129 +168,154 @@ Kd = 0.15
 
 prev_error = 0
 last_time = time.monotonic()
-while True:
-    frame = picam2.capture_array()  # RGB image
-
-    leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
-    rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
-
-    now = time.monotonic()
-    #start moving (motor start)
-    send_motor(1600)
-    # -------------------------
-    # MODE / STATE MACHINE
-    # -------------------------
-    if mode == MODE_WALL_FOLLOW:
-        low_left = leftArea < ENTER_TURN_THRESH
-        low_right = rightArea < ENTER_TURN_THRESH
-
-        # Debounce: require N consecutive frames below threshold
-        if low_left or low_right:
-            enter_counter += 1
+#start moving (motor start)
+send_motor(WALL_FOLLOW_MOTOR_VALUE)
+try:
+    while True:
+        if lap_count >= 4:
+            break
         else:
-            enter_counter = 0
+            frame = picam2.capture_array()  # RGB image
 
-        if enter_counter >= ENTER_CONFIRM_FRAMES:
-            mode = MODE_CORNER_TURN
-            turn_enter_time = now
-            enter_counter = 0  # reset for next time
+            leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
+            rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
 
-            # Remember which side triggered (or both) at the moment we commit to turning mode
-            if low_left and low_right:
-                turn_trigger_side = "both"
-            elif low_left:
-                turn_trigger_side = "left"
+            now = time.monotonic()
+            # -------------------------
+            # MODE / STATE MACHINE
+            # -------------------------
+            if mode == MODE_WALL_FOLLOW:
+                if mode != prev_mode: 
+                    send_motor(WALL_FOLLOW_MOTOR_VALUE)
+                
+                low_left = leftArea < ENTER_TURN_THRESH
+                low_right = rightArea < ENTER_TURN_THRESH
+
+                # Debounce: require N consecutive frames below threshold
+                if low_left or low_right:
+                    enter_counter += 1
+                else:
+                    enter_counter = 0
+                prev_mode = mode
+                if enter_counter >= ENTER_CONFIRM_FRAMES:
+                    mode = MODE_CORNER_TURN
+                    turn_enter_time = now
+                    enter_counter = 0  # reset for next time
+
+                    # Remember which side triggered (or both) at the moment we commit to turning mode
+                    if low_left and low_right:
+                        turn_trigger_side = "both"
+                    elif low_left:
+                        turn_trigger_side = "left"
+                    else:
+                        turn_trigger_side = "right"
+                else:
+                    if (leftArea + rightArea) > 0:
+                        error = (leftArea - rightArea) / (leftArea + rightArea)
+                    else:
+                        error = 0
+                    current_time = now
+                    dt = max(current_time - last_time, 1e-3)
+                    derivative = (error - prev_error) / dt if dt > 0 else 0
+                    output = (Kp * error) + (Kd * derivative)
+                    correction = int(output)
+                    if correction > 10:
+                        correction = 10
+                    elif correction < -10:
+                        correction = -10
+                    send_servo_assigned(correction)
+                    print(correction)
+                    prev_error = error
+                    last_time = current_time
+
+            else:  # MODE_CORNER_TURN
+                if prev_mode != mode: 
+                    send_motor(CORNER_TURN_MOTOR_VALUE)
+                    mode_change = True
+                    turn_count += 1
+                    if turn_count % 4 == 0:
+                        lap_count += 1
+
+                
+                elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
+
+                # Requirement (1): the side that became small must grow > 1000
+                if turn_trigger_side == "left":
+                    grew_ok = leftArea > EXIT_GROW_THRESH
+                elif turn_trigger_side == "right":
+                    grew_ok = rightArea > EXIT_GROW_THRESH
+                else:  # "both" or unknown
+                    grew_ok = (leftArea > EXIT_GROW_THRESH) and (rightArea > EXIT_GROW_THRESH)
+
+                # Requirement (2): 5 seconds passed since entering turning state
+                time_ok = elapsed >= EXIT_TIME_SEC
+                prev_mode = mode
+                # Exit turning mode only if BOTH requirements are true
+                if grew_ok and time_ok:
+                    mode = MODE_WALL_FOLLOW
+                    turn_enter_time = None
+                    turn_trigger_side = None
+                    enter_counter = 0
+                else:
+                    if mode_change == True:
+                        if turn_trigger_side == "left":
+                            send_servo(TURN_LEFT_ANGLE)  # turn left
+                        elif turn_trigger_side == "right":
+                            send_servo(TURN_RIGHT_ANGLE)   # turn right
+                        else:
+                            send_servo(TURN_LEFT_ANGLE)  # default
+                        mode_change = False
+                    else:
+                        continue
+
+            # -------------------------
+            # Visualization
+            # -------------------------
+            draw_roi(frame, ROI1, label="ROI1 (Left)")
+            draw_roi(frame, ROI2, label="ROI2 (Right)")
+
+            if leftContour is not None:
+                cv2.drawContours(frame, [leftContour], -1, (0, 255, 0), 2)
+            if rightContour is not None:
+                cv2.drawContours(frame, [rightContour], -1, (0, 255, 0), 2)
+
+            cv2.putText(frame, f"leftArea: {int(leftArea)}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, f"rightArea: {int(rightArea)}", (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+
+            # Mode line + extra info
+            if mode == MODE_WALL_FOLLOW:
+                mode_color = (0, 255, 255)  # yellow
+                cv2.putText(frame, "MODE: WALL_FOLLOW", (10, 95),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2, cv2.LINE_AA)
+
+                # Show debounce status (useful for tuning)
+                cv2.putText(frame, f"enter_counter: {enter_counter}/{ENTER_CONFIRM_FRAMES}", (10, 125),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
             else:
-                turn_trigger_side = "right"
-        else:
-            if (leftArea + rightArea) > 0:
-                error = (leftArea - rightArea) / (leftArea + rightArea)
-            else:
-                error = 0
-            current_time = now
-            dt = max(current_time - last_time, 1e-3)
-            derivative = (error - prev_error) / dt if dt > 0 else 0
-            output = (Kp * error) + (Kd * derivative)
-            correction = int(output)
-            if correction > 10:
-                correction = 10
-            elif correction < -10:
-                correction = -10
-            send_servo_assigned(correction)
-            print(correction)
-            prev_error = error
-            last_time = current_time
+                mode_color = (0, 0, 255)    # red
+                elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
+                side = turn_trigger_side or "unknown"
+                cv2.putText(frame, f"MODE: CORNER_TURN (side={side})", (10, 95),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2, cv2.LINE_AA)
+                cv2.putText(frame, f"turn time: {elapsed:0.1f}s  exit if area>{EXIT_GROW_THRESH} AND time>={EXIT_TIME_SEC}s",
+                            (10, 125), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
 
-    else:  # MODE_CORNER_TURN
-        elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
+            cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
 
-        # Requirement (1): the side that became small must grow > 1000
-        if turn_trigger_side == "left":
-            grew_ok = leftArea > EXIT_GROW_THRESH
-        elif turn_trigger_side == "right":
-            grew_ok = rightArea > EXIT_GROW_THRESH
-        else:  # "both" or unknown
-            grew_ok = (leftArea > EXIT_GROW_THRESH) and (rightArea > EXIT_GROW_THRESH)
+            # Optional: show masks for tuning thresholds
+            # cv2.imshow("Left ROI Mask", leftMask)
+            # cv2.imshow("Right ROI Mask", rightMask)
 
-        # Requirement (2): 5 seconds passed since entering turning state
-        time_ok = elapsed >= EXIT_TIME_SEC
-
-        # Exit turning mode only if BOTH requirements are true
-        if grew_ok and time_ok:
-            mode = MODE_WALL_FOLLOW
-            turn_enter_time = None
-            turn_trigger_side = None
-            enter_counter = 0
-        else:
-            if turn_trigger_side == "left":
-                send_servo(TURN_LEFT_ANGLE)  # turn left
-            elif turn_trigger_side == "right":
-                send_servo(TURN_RIGHT_ANGLE)   # turn right
-            else:
-                send_servo(TURN_LEFT_ANGLE)  # default
-
-    # -------------------------
-    # Visualization
-    # -------------------------
-    draw_roi(frame, ROI1, label="ROI1 (Left)")
-    draw_roi(frame, ROI2, label="ROI2 (Right)")
-
-    if leftContour is not None:
-        cv2.drawContours(frame, [leftContour], -1, (0, 255, 0), 2)
-    if rightContour is not None:
-        cv2.drawContours(frame, [rightContour], -1, (0, 255, 0), 2)
-
-    cv2.putText(frame, f"leftArea: {int(leftArea)}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"rightArea: {int(rightArea)}", (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-
-    # Mode line + extra info
-    if mode == MODE_WALL_FOLLOW:
-        mode_color = (0, 255, 255)  # yellow
-        cv2.putText(frame, "MODE: WALL_FOLLOW", (10, 95),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2, cv2.LINE_AA)
-
-        # Show debounce status (useful for tuning)
-        cv2.putText(frame, f"enter_counter: {enter_counter}/{ENTER_CONFIRM_FRAMES}", (10, 125),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-    else:
-        mode_color = (0, 0, 255)    # red
-        elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
-        side = turn_trigger_side or "unknown"
-        cv2.putText(frame, f"MODE: CORNER_TURN (side={side})", (10, 95),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2, cv2.LINE_AA)
-        cv2.putText(frame, f"turn time: {elapsed:0.1f}s  exit if area>{EXIT_GROW_THRESH} AND time>={EXIT_TIME_SEC}s",
-                    (10, 125), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-
-    cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
-
-    # Optional: show masks for tuning thresholds
-    # cv2.imshow("Left ROI Mask", leftMask)
-    # cv2.imshow("Right ROI Mask", rightMask)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+finally:
+    send_motor(1500)  # stop motor
+    send_servo(75)    # center steering
+    cv2.destroyAllWindows()
+    picam2.stop()
+    arduino.close()
 
 cv2.destroyAllWindows()
 picam2.stop()
