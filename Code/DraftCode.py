@@ -165,14 +165,14 @@ turn_trigger_side = None     # "left", "right", or "both"
 enter_counter = 0            # consecutive-frame counter for entering turning mode
 Kp = 0.25
 Kd = 0.15
-
+mode_change = False
 prev_error = 0
 last_time = time.monotonic()
 #start moving (motor start)
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
 try:
     while True:
-        if lap_count >= 4:
+        if lap_count >= 3:
             break
         else:
             frame = picam2.capture_array()  # RGB image
@@ -232,6 +232,7 @@ try:
                 if prev_mode != mode: 
                     send_motor(CORNER_TURN_MOTOR_VALUE)
                     mode_change = True
+                    prev_error = 0
                     turn_count += 1
                     if turn_count % 4 == 0:
                         lap_count += 1
@@ -265,8 +266,6 @@ try:
                         else:
                             send_servo(TURN_LEFT_ANGLE)  # default
                         mode_change = False
-                    else:
-                        continue
 
             # -------------------------
             # Visualization
@@ -316,6 +315,3 @@ finally:
     cv2.destroyAllWindows()
     picam2.stop()
     arduino.close()
-
-cv2.destroyAllWindows()
-picam2.stop()
