@@ -21,7 +21,7 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 **Age:** 15
 
 **Introduction:**
-Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests such as sports—my main sport being volleyball—and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
+Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
 
 
