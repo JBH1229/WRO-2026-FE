@@ -20,7 +20,6 @@ Servo lizardESC;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("test");
   Serial.setTimeout(10);
   Steering_Servo.attach(3);
   lizardESC.attach(4);
