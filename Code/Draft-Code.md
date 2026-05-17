@@ -21,7 +21,7 @@ Servo lizardESC;
 void setup() {
   Serial.begin(115200);
   Serial.println("test");
-  Serial.SetTimeout(10);
+  Serial.setTimeout(10);
   Steering_Servo.attach(3);
   lizardESC.attach(4);
   lizardESC.writeMicroseconds(1500); // 1500us is typically neutral
