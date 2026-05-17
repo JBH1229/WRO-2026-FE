@@ -13,11 +13,11 @@ def log(func, *args):
         
 
 # --- Arduino init ---
-arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1, write_timout=1)
 # Most Arduinos reset when the port opens; give it time to boot
 time.sleep(2.0)
 # Clear anything the Arduino might have printed during boot
-servo_value = 66qqqqqqq
+servo_value = 66
 motor_value = 1500
 #set default values
 arduino.reset_input_buffer()
@@ -185,6 +185,8 @@ last_time = time.monotonic()
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
 try:
     while True:
+        if arduino.in_waiting > 0:
+            arduino.reset_input_buffer()  # Throw away unread data from Arduino
         if lap_count >= 3:
             break
         else:
