@@ -34,6 +34,7 @@ def send_servo(value):
     valueb = bytes(str(value), encoding="utf-8")
     arduino.write(b"@S%b\n" %valueb)
     servo_value = value
+    print(value)
 @log
 def send_motor(value):
     global motor_value
@@ -57,6 +58,7 @@ def send_servo_assigned(value):
     valueb = bytes(str(value), encoding="utf-8")
     arduino.write(b"@S%b\n" %valueb)
     servo_value = value
+    print(value)
 @log
 def send_motor_assigned(value):
     global motor_value
@@ -81,6 +83,7 @@ def send_servo_relative(value):
     valueb = bytes(str(value), encoding="utf-8")
     arduino.write(b"@S%b\n" %valueb)
     servo_value = value
+    print(value)
 @log
 def send_motor_relative(value):
     global motor_value
@@ -160,8 +163,8 @@ ENTER_TURN_THRESH = 700      # condition: leftArea OR rightArea < 550
 EXIT_GROW_THRESH  = 1200     # the side that dropped must grow > 1200
 EXIT_TIME_SEC     = 5.0      # AND at least 10 seconds must pass since entry
 MAX_TIME_SEC 	  = 10.0
-TURN_LEFT_ANGLE   = 36 # change lower if nessassary
-TURN_RIGHT_ANGLE  = 96 # change higher if nessassary
+TURN_LEFT_ANGLE   = 56 # change lower if nessassary
+TURN_RIGHT_ANGLE  = 76 # change higher if nessassary
 MAX_TURN_RATE = 40
 # --- Anti-false-trigger improvement ---
 # Require the enter condition to be true for N consecutive frames
@@ -172,15 +175,15 @@ MODE_WALL_FOLLOW = "WALL_FOLLOW"
 MODE_CORNER_TURN = "CORNER_TURN"
 prev_mode = ""
 mode = MODE_WALL_FOLLOW
-WALL_FOLLOW_MOTOR_VALUE = 1600
-CORNER_TURN_MOTOR_VALUE = 1570
+WALL_FOLLOW_MOTOR_VALUE = 1610
+CORNER_TURN_MOTOR_VALUE = 1620
 
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_trigger_side = None     # "left", "right", or "both"
 enter_counter = 0            # consecutive-frame counter for entering turning mode
 Kp = 0.25
 Kd = 0.15
-mode_change = False
+mode_change = True
 prev_error = 0
 last_time = time.monotonic()
 #start moving (motor start)
@@ -327,7 +330,7 @@ try:
                 break
 finally:
     send_motor(1500)  # stop motor
-    send_servo(75)    # center steering
+    send_servo(66)    # center steering
     cv2.destroyAllWindows()
     picam2.stop()
     arduino.close()
