@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <Servo.h>
 #include <Arduino_BMI270_BMM150.h> // Include Rev2 IMU Library
 
 static const size_t LINE_MAX = 16;    // max length of command (excluding the terminate character '\0')
@@ -14,7 +15,8 @@ static char   lineBuf[LINE_MAX + 1];
 static size_t lineLen = 0;
 static const char SOC = '@';          // start-of-command marker
 static bool   inCommand = false;
-
+Servo Steering_Servo;
+Servo lizardESC;
 // --- IMU Variables ---
 float heading = 0.0;
 float gyroZBias = 0.0;
@@ -123,6 +125,7 @@ static void handleCommand(char* command) {
 
   if (type == 'S') {
     if (value < 0 || value > 180) return;
+
       Steering_Servo.write(value);
 
   } else if (type == 'M') {
@@ -181,8 +184,7 @@ void loop() {
     // Integrate angular velocity over time
     heading -= z * dt; 
   }
-}
-```
+}```
 ### Camera Capture & ROI Drawing
 ```py
 import cv2
