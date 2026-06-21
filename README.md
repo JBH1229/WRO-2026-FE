@@ -38,5 +38,7 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 | [3-cell Battery](https://www.amazon.ca/Zeee-Battery-Connector-Airplane-Helicopter/dp/B0D5LKXHBK/ref=sr_1_5?crid=2JRB855SKW7EL&dib=eyJ2IjoiMSJ9.zuMSsrpJTPMqUC9ImIBkmV4v4x4hdFTFq9BqWiEWE0jqOxI6oDn5l1-ZgCRG0X88Kbh_ngpDrcc41PEd67Tv4SMC3-YfOILewxoaVUX26pIiGS3GsPwA1lSosDHRkJqGSuboG13pQzZT8-YMQDT6nLyrvlKogiwD2-4ZJqq-w9Zfc-BIydlygDGrIcn9Iq8gRbixYnQTLDIbxYkFMJwV-vm6SSuI4JJFe2qe2MX1r9d4_WRuxW5mZKGwtqqm8_BORUz9hJPijcxB6StPEOHx4_ty6BIzwp5swaUASUKlbtE.9GlojnF5dxjozmO9taqUzfztTD3UhDYnDdFgq4NITd0&dib_tag=se&keywords=11.1+v+cell+battery&qid=1769377081&sprefix=11+1+v+cell+battery%2Caps%2C133&sr=8-5)  | $46.99  |
 | [LiDAR sensor](https://www.aliexpress.com/item/1005003012681021.html?spm=a2g0o.order_list.order_list_main.31.67dd18029q37Y0)  | $81.14  |
 | [Regulator](https://ca.robotshop.com/products/yahboom-power-supply-expansion-board-raspberry-pi-5) | $17.54 |
+| [Nano tape](amazon.ca/Ohayooz-Removable-Adhesive-Washable-Waterproof/dp/B0DJX3J7V6/ref=sr_1_5?dib=eyJ2IjoiMSJ9.4xs5nq5gFcHaOOpzaJjaMN0_azbULmeVyD8pNeklZcDBx1WeliPTh1GmLrq_QszISStyy2xWNMsVTvi9F2-MjdOFE1uMqWsDOs4wMZy9eCiTZcGXj-_p1O76AdoWVeJdbd9oE0J45jQPuQHyVvC5U_d3zSNre8Yo6vamYCPCTLxT3ojPra2FbWc6d77g_bmG1Mkmak3yqo0TmhIXMXnrilEh7iyucooazrCGLo7r01bNEm9QjQfJgwg0kl0sJAzUFfbutXz_a7xbWKLfesgSTevqlMMsHLOt2WqoNA0ZjUI.SWvS86ikc4qES7ofzt8WUfOumJGDljk0pQOSa4xiubs&dib_tag=se&keywords=nano+tape&qid=1782078372&sr=8-5) | $9.97 |
+| [3d-prints](3d-prints) | $*** |
 | Total Price Before Tax   | $***  |
 | Total Price   | $***  |
