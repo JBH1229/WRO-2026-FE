@@ -184,7 +184,8 @@ void loop() {
     // Integrate angular velocity over time
     heading -= z * dt; 
   }
-}```
+}
+```
 ### Camera Capture & ROI Drawing
 ```py
 import cv2
