@@ -210,8 +210,6 @@ The robot’s power source is an 11.1V, 2200mAh, 3-cell LiPo battery. The drive 
 # Software
 # Autonomous Robot State Machine Documentation
 
-This document describes the Finite State Machine (FSM) implemented for the vision-based autonomous robot navigation system.
-
 ## 1. ASCII State Machine Diagram
 
 ```text
