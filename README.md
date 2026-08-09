@@ -7,6 +7,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 * [Prices](#price-of-the-components)
 * [Power](#power)
 * [Engineering Journal](#engineering-journal)
+* [Software](#software)
 # Team Members
 
 ### Jonathan Huang
@@ -166,3 +167,121 @@ The Zeee LiPo battery can comfortably supply peak loads well within thermal safe
 
 ## Overview
 The robot’s power source is an 11.1V, 2200mAh, 3-cell LiPo battery. The drive unit includes a Furitek Micro Komodo BLDC motor and Furitek Lizard Pro controller. A 5V power supply is used for powering the Raspberry Pi 5, LiDAR sensor, camera, and Arduino Nano. The average total battery power consumption of the robot is 36.0 W, which includes the Raspberry Pi 5 (9.0 W), camera (1.25 W), LiDAR sensor (1.0 W), steering servo (0.9 W), Arduino Nano (0.15 W), Furitek electronics and brushless drive system (22.5 W), and conversion losses (1.20 W). The average current consumption from the battery is approximately 3.24 A, which provides an estimated continuous full-speed runtime of about 40 minutes (and 50–60 minutes under typical WRO run conditions). The estimated maximum peak current demand during acceleration or stall is 12–16 A.
+
+
+# Software
+# Autonomous Robot State Machine Documentation
+
+This document describes the Finite State Machine (FSM) implemented for the vision-based autonomous robot navigation system.
+
+## 1. ASCII State Machine Diagram
+
+```text
+                 +-----------------------+
+                 |    INITIALIZATION     |
+                 | - Init Serial & Cam   |
+                 | - Servo = 66          |
+                 | - Motor = 1500 -> 1622|
+                 +-----------+-----------+
+                             |
+                             v
+                 +-----------------------+
+      +--------->|      WALL_FOLLOW      |<---------+
+      |          | - Steering: PD Control|          |
+      |          |   (leftArea-rightArea)|          |
+      |          | - Speed = 1622        |          |
+      |          +----+-----------+------+          |
+      |               |           |                 |
+      |               |           |                 |
+[No Pillar for 8]     |           |[low_left/right  |[Gyro turned
+[ consecutive   ]     |           | for 5 frames    | <= GYRO_VAL]
+[   frames      ]     |           | AND time_elapsed] OR [Area grew
+      |               |           |                 |  AND time_ok]
+      |               |           v                 |
++-----+-----------+   |   +-------+---------------+ |
+|  PILLAR_AVOID   |   |   |      CORNER_TURN      | |
+| - Target CX:    |   |   | - Servo: 41° L / 81° R| |
+|   Red(40)/Grn(600)  |   | - Speed = 1622        | |
+| - Steering:     |<--+   | - turn_count ++       |-+
+|   P Control     |[Active| - lap_count ++ (every |
++-----------------+ Color]+-----------------------+
+                            |
+                     [turn_count >= 12]
+                            |
+                            v
+                 +-----------------------+
+                 |        END_RUN        |
+                 | - end_run_counter ++  |
+                 +-----------+-----------+
+                             |
+                   [counter >= 100 frames]
+                             |
+                             v
+                 +-----------------------+
+                 |         STOP          |
+                 | - Servo = 66 (Center) |
+                 | - Motor = 1500 (Stop) |
+                 | - Cleanup & Exit      |
+                 +-----------------------+
+```
+
+---
+
+## 2. State Descriptions
+
+### INITIALIZATION
+* **Function**: Sets up hardware interfaces (Serial connection with Arduino running at 115200 baud rate, setting up PiCamera2)
+* **Operations**:
+  * Default position set for the servos (66) and for the motor (1500).
+  * Serial buffer reset and Motor Drive operation set to start driving (1622).
+* **Next State**: Transition to WALL_FOLLOW occurs immediately.
+
+### WALL_FOLLOW
+* **Function**: Operating state by default. It moves straight ahead in the lanes using wall following.
+* **Controller**: PD Controller based on the difference in area between the left (ROI1) and right (ROI2) black walls' contours.
+  $$\text{error} = \frac{\text{leftArea} - \text{rightArea}}{\text{leftArea} + \text{rightArea}}$$
+* **Transitions**:
+  * **To PILLAR_AVOID**: Occurs when active_color is observed (`red_area` or `green_area` > MIN_REACT_AREA [800]).
+  * **To CORNER_TURN**: Occurs when low_left or low_right (< 1000) is observed for ENTER_CONFIRM_FRAMES (5) successive frames and time_elapsed is true.
+  * **To END_RUN**: Occurs when turn_count >= TURN_LIMIT (12).
+
+### PILLAR_AVOID
+* **Purpose**: Dodges obstacle pillars through detection with HSV color thresholding.
+* **Control Logic**:
+  * Target RED_TARGET_CX (40) for red pillars or GREEN_TARGET_CX (600) for green pillars.
+  * Utilizes Proportional control using dynamic cx error correction formula:
+    $$\text{correction} = kp_{\text{avoid}} + (active_{\text{cx}} - target_{\text{cx}})$$
+* **Transitions**:
+  * **To WALL_FOLLOW**: Triggers when frames_without_pillar >= PILLAR_EXIT_FRAMES (8 frames).
+
+### CORNER_TURN
+* **Purpose**: Implements predetermined 90° turns.
+* **Control Logic**:
+  * Runs with motor at CORNER_TURN_MOTOR_VALUE (1622).
+  * Turns servo at TURN_LEFT_ANGLE (41°) or TURN_RIGHT_ANGLE (81°) as dictated by turn_trigger_side.
+  * Increases turn_count by 1, increment lap_count every 4 turns.
+* **Transitions**:
+  * **To WALL_FOLLOW**:
+    * **If Gyro Mode is active (TOGGLE_GYRO_TURN)**: Triggers when abs_turn_heading <= GYRO_TURN_VAL (15°).
+    * **If Vision Mode is active**: Triggers when wall contour area increases past threshold (grew_ok) AND EXIT_TIME_SEC elapsed OR MAX_TIME_SEC (10.0s) elapsed.
+
+### END_RUN & STOP
+* **Purpose**: Shutdown protocol after run completion.
+* **Actions**:
+  * Counts up to END_RUN_LIMIT (100 frames).
+  * Neutralizes steer at 66 and motor at 1500.
+  * Releases camera feed and serial port.
+  
+---
+
+## 3. Threshold & Control Constants
+
+| Constant | Value | Unit / Description |
+| :--- | :--- | :--- |
+| `WALL_FOLLOW_MOTOR_VALUE` | `1622` | Forward driving speed pulse width |
+| `LEFT_ENTER_TURN_THRESH` | `1000` | Area drop threshold for corner entry |
+| `ENTER_CONFIRM_FRAMES` | `5` | Debounce frame count before turning |
+| `PILLAR_EXIT_FRAMES` | `8` | Consecutive clear frames required to exit avoid mode |
+| `MIN_REACT_AREA` | `800` | Minimum pillar contour area to trigger avoidance |
+| `TURN_LIMIT` | `12` | Total corners completed before terminating run |
+| `Kp` / `Kd` | `15` / `-1` | PD parameters for wall following |
