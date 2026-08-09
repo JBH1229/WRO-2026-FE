@@ -83,7 +83,7 @@ Here is a GIF and photos of our final design
 | *Top* | *Bottom* |
 | <img src="./images/robottop.jpg" width="50%" height="50%" /> | <img src="./images/robotbottom.jpg" width="50%" height="50%" /> | 
 
-Click [here](Electrical/Readme.md#why-we-changed-the-robot) to see the main differences between the first and final renditions of our robot
+Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main differences between the first and final renditions of our robot
 
 # Price of the Components
 | Component  | Cost |
