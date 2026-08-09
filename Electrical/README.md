@@ -40,7 +40,7 @@
 
 
 
-## Why we changed our robot
+## Why we changed the robot
 
 
 
