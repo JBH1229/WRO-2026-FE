@@ -45,8 +45,10 @@
   * **Future Scope:** Will be connected to the Raspberry Pi’s UART or USB port for 2D/3D obstacle grid detection and wall-following algorithms.
 
 ## Why we changed the robot
-Our first robot had a ton of problems and there is a lot of emphasize on ton, to see them all you can read our engineering journal [here](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0) where it provides information on each problem, the dates they appeared, and an solutions.
-
+Our first robot had a ton of problems and emphasize on a ton, to see them all you can read our engineering journal [here](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0) where it provides information on each problem, the dates they appeared, and any solutions.
+| *First Robot* |
+| :---: |
+| <img src="/Images/first_robot_3.jpg" width="25%" height="25%" /> |
 
 
 
