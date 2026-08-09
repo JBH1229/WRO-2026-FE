@@ -1,9 +1,9 @@
-# This is the readme for the schematic folder. In here will be the explanation for the schematic and any relevant variations.
+## This is the readme for the Electrical folder. In here will be the explanation for the circuit and any relevant variations; As well as reasoning behind our electronic choices .
 ---
 
 
 ## Schematic
-<img src="/Schematic/WRO_FE_2026_schematic_schem.png" width="700" height="700">
+<img src="/Electrical/WRO_FE_2026_schematic_schem.png" width="700" height="700">
 
 ---
 
