@@ -243,12 +243,13 @@ mode_change = True
 prev_error = 0
 frames_without_pillar = 0
 
-def recovery(side, left_area, right_area, time, old_time)
+def recovery(side, left_area, right_area, time, old_time):
     global active_color
     global mode
     global prev_error
     global frames_without_pillar
     global recovery_mode
+    global turn_trigger_side
     if active_color is not None:
         mode = MODE_PILLAR_AVOID
         send_motor(PILLAR_AVOID_SPEED)
@@ -271,6 +272,7 @@ def recovery(side, left_area, right_area, time, old_time)
         mode = MODE_CORNER_TURN
         frames_without_pillar = 0
         prev_error = 0
+        turn_trigger_side = side
         send_motor(CORNER_TURN_MOTOR_VALUE)
         recovery_mode = False
         return
@@ -453,6 +455,7 @@ try:
                 # Requirement (2): 5 seconds passed since entering turning state
                 time_ok = elapsed >= EXIT_TIME_SEC
                 time_max = elapsed >= MAX_TIME_SEC
+                print(time_ok, grew_ok)
                 prev_mode = mode
                 # Exit turning mode only if BOTH requirements are true
                 if TOGGLE_GYRO_TURN:
