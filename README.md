@@ -7,8 +7,8 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 * [Engineering Journal](#engineering-journal)
 * [The Challenge](#the-future-engineers-challenge)
 * [The Robot](#robot)
-  * [First Design](#first)
-  * [Final Design](#final)
+  * [First Design](#first-design)
+  * [Final Design](#final-design)
 * [Performance Videos](#video)
   * [Open challenge](#OPCV)
   * [Obstacle Challenge](#OBCV)  
@@ -64,6 +64,26 @@ The **Documentation** focuses on explaining how our robot was designed and devel
 Learn more about the challenges WRO has to offer and the rules in accordance [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
 
 # Robot
+### First design
+These are a couple pictures of the first variation of our robot
+| *Side* | *Camera Detached* |
+| :--: | :--: | 
+| <img src="./Images/first_robot_1.jpg" width="50%" height="50%" /> | <img src="./Images/first_robot_3.jpg" width="50%" height="50%" /> | 
+### Final design
+Here is a GIF and photos of our final design
+| *360° View* |
+| :--:|
+| *####MISSING####* |
+
+| *Front* | *Back* |
+| :--: | :--: |
+| <img src="./images/robotfront.jpg" width="50%" height="50%" /> | <img src="./images/robotback.jpg" width="50%" height="50%" /> | 
+| *Left* | *Right* |
+| <img src="./images/robotleft.jpg" width="50%" height="50%" /> | <img src="./images/robotright.jpg" width="50%" height="50%" /> | 
+| *Top* | *Bottom* |
+| <img src="./images/robottop.jpg" width="50%" height="50%" /> | <img src="./images/robotbottom.jpg" width="50%" height="50%" /> | 
+
+Click [here](Electrical/Readme.md#why-we-changed-the-robot) to see the main differences between the first and final renditions of our robot
 
 # Price of the Components
 | Component  | Cost |
