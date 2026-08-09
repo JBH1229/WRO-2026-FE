@@ -6,7 +6,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 * [The Team](#team-members)
 * [Prices](#price-of-the-components)
 * [Power](#power)
-
+* [Engineering Journal](#engineering-journal)
 # Team Members
 
 ### Jonathan Huang
@@ -24,7 +24,8 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
 
-
+# Engineering Journal
+Here is the link to our [Engineering Journal google document](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
 # Price of the Components
 | Component  | Cost |
 | ------------- | ------------- |
