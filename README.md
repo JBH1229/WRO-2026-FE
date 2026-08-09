@@ -1,4 +1,4 @@
-# WRO-Future-Engineers-2026
+# WRO Future Engineers 2026
 Our repository for the 2026 World Robot Olympiad: in the category Future engineers
 
 
@@ -91,7 +91,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | [BLDC Motor](https://furitek.com/products/furitek-micro-komodo-1212-3456kv-brushless-motor-with-15t-steel-pinion-for-fury-wagon-fx118)  | $34.99 | 
 | [Furitek Lizard Pro ESC](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) | $79.99 | [here](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) |
 | [Servo Motor](https://hitecrcd.com/hs-5055mg-economy-metal-gear-feather-servo/)  | $29.99  |
-| [Camera](https://www.aliexpress.com/item/1005006913591702.html?spm=a2g0o.tesla.0.0.4560FbAVFbAVpn&pdp_npi=6%40dis%21CAD%21C%2412.32%21C%242.08%21%21%21%21%21%402103126e17687701347117473e21ac%2112000038708544630%21btfpre%21%21%21%211%210%21&afTraceInfo=1005006913591702__pc__c_ppc_item_bridge_pc_related_wf__lsTNOZH__1768770134968)  | $6 |
+| [Camera](https://www.amazon.ca/dp/B0D324RKRZ?ref=ppx_yo2ov_dt_b_fed_asin_title)  | $43.56 |
 | [Raspberry Pi 5 + MicroSD card + Additions](https://www.pishop.ca/product/raspberry-pi-5-8gb/?src=raspberrypi)  | $312.80  |
 | [Arduino Nano](https://store-usa.arduino.cc/products/nano-33-ble-sense-rev2-with-headers)   | $39.70  |
 | [Chassis](https://www.aliexpress.com/item/1005010095696996.html?spm=a2g0o.productlist.main.5.723cofcWofcWlh&algo_pvid=2a715fdb-fb6d-4899-8280-a215c2b2d032&algo_exp_id=2a715fdb-fb6d-4899-8280-a215c2b2d032-4&pdp_ext_f=%7B%22order%22%3A%2275%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21CAD%21576.58%21138.38%21%21%212894.48%21694.68%21%40210328c017699769899361575e43e8%2112000051128234698%21sea%21CA%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A144f3923%3Bm03_new_user%3A-29895&curPageLogUid=zbORjXdo3UaO&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005010095696996%7C_p_origin_prod%3A#nav-review)  | $140.38  |
