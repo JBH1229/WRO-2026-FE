@@ -3,11 +3,11 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 
 
 ## Table of Contents
-* [The Team](#team)
-* [Prices](#Price)
-* [Power](#Power)
+* [The Team](#team-members)
+* [Prices](#price-of-the-components)
+* [Power](#power)
 
-# Team Members <a class="anchor" id="team"></a>
+# Team Members
 
 ### Jonathan Huang
 **Age:** 15
@@ -25,7 +25,7 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 
 
 
-# Price of the Components <a class="anchor" id="Price"></a>
+# Price of the Components
 | Component  | Cost |
 | ------------- | ------------- |
 | [BLDC Motor](https://furitek.com/products/furitek-micro-komodo-1212-3456kv-brushless-motor-with-15t-steel-pinion-for-fury-wagon-fx118)  | $34.99 | 
@@ -45,7 +45,7 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 | Total Price   | $***  |
 
 
-# Power <a class="anchor" id="Power"></a>
+# Power
 
 ## Power Budget
 
