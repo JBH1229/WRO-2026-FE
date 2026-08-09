@@ -177,52 +177,52 @@ This document describes the Finite State Machine (FSM) implemented for the visio
 ## 1. ASCII State Machine Diagram
 
 ```text
-                 +-----------------------+
-                 |    INITIALIZATION     |
-                 | - Init Serial & Cam   |
-                 | - Servo = 66          |
-                 | - Motor = 1500 -> 1622|
-                 +-----------+-----------+
-                             |
-                             v
-                 +-----------------------+
-      +--------->|      WALL_FOLLOW      |<---------+
-      |          | - Steering: PD Control|          |
-      |          |   (leftArea-rightArea)|          |
-      |          | - Speed = 1622        |          |
-      |          +----+-----------+------+          |
-      |               |           |                 |
-      |               |           |                 |
-[No Pillar for 8]     |           |[low_left/right  |[Gyro turned
-[ consecutive   ]     |           | for 5 frames    | <= GYRO_VAL]
-[   frames      ]     |           | AND time_elapsed] OR [Area grew
-      |               |           |                 |  AND time_ok]
-      |               |           v                 |
-+-----+-----------+   |   +-------+---------------+ |
-|  PILLAR_AVOID   |   |   |      CORNER_TURN      | |
-| - Target CX:    |   |   | - Servo: 41° L / 81° R| |
-|   Red(40)/Grn(600)  |   | - Speed = 1622        | |
-| - Steering:     |<--+   | - turn_count ++       |-+
-|   P Control     |[Active| - lap_count ++ (every |
-+-----------------+ Color]+-----------------------+
-                            |
-                     [turn_count >= 12]
-                            |
-                            v
-                 +-----------------------+
-                 |        END_RUN        |
-                 | - end_run_counter ++  |
-                 +-----------+-----------+
-                             |
-                   [counter >= 100 frames]
-                             |
-                             v
-                 +-----------------------+
-                 |         STOP          |
-                 | - Servo = 66 (Center) |
-                 | - Motor = 1500 (Stop) |
-                 | - Cleanup & Exit      |
-                 +-----------------------+
+                        +---------------------------------------+
+                        |            INITIALIZATION             |
+                        | - Init Serial & Cam                   |
+                        | - Servo = 66                          |
+                        | - Motor = 1500 -> 1622                |
+                        +-------------------+-------------------+
+                                            |
+                                            v
+                        +---------------------------------------+
+   +------------------->|              WALL_FOLLOW              |<-------------------+
+   |                    | - Steering: PD Control                |                    |
+   |                    |   (leftArea-rightArea)                |                    |
+   |                    | - Speed = 1622                        |                    |
+   |                    +----+-----------------------------+----+                    |
+   |                         |                             |                         |
+   |                         |                             |                         |
+[No Pillar for               |                             | [low_left/right         | [Gyro turned
+ 8 consecutive               | [Active Color]              |  for 5 frames           |  <= GYRO_VAL]
+ frames]                     |                             |  AND time_elapsed]      |  OR [Area grew
+   |                         v                             v                         |  AND time_ok]
+   |            +-------------------------+   +-------------------------+            |
+   +------------|      PILLAR_AVOID       |   |       CORNER_TURN       |------------+
+                | - Target CX:            |   | - Servo: 41° L / 81° R  |
+                |   Red(40)/Grn(600)      |   | - Speed = 1622          |
+                | - Steering: P Control   |   | - turn_count ++         |
+                +-------------------------+   | - lap_count ++          |
+                                              |   (every 4 turns)       |
+                                              +------------+------------+
+                                                           |
+                                                   [turn_count >= 12]
+                                                           |
+                                                           v
+                        +---------------------------------------+
+                        |                END_RUN                |
+                        | - end_run_counter ++                  |
+                        +-------------------+-------------------+
+                                            |
+                                  [counter >= 100 frames]
+                                            |
+                                            v
+                        +---------------------------------------+
+                        |                 STOP                  |
+                        | - Servo = 66 (Center)                 |
+                        | - Motor = 1500 (Stop)                 |
+                        | - Cleanup & Exit                      |
+                        +---------------------------------------+
 ```
 
 ---
