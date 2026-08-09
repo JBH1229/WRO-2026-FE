@@ -5,9 +5,9 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 ## Table of Contents
 * [The Team](#team)
 * [Prices](#Price)
+* [Power](#Power)
 
-
-## Team Members <a class="anchor" id="team"></a>
+# Team Members <a class="anchor" id="team"></a>
 
 ### Jonathan Huang
 **Age:** 15
@@ -25,7 +25,7 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 
 
 
-## Price of the Components <a class="anchor" id="Price"></a>
+# Price of the Components <a class="anchor" id="Price"></a>
 | Component  | Cost |
 | ------------- | ------------- |
 | [BLDC Motor](https://furitek.com/products/furitek-micro-komodo-1212-3456kv-brushless-motor-with-15t-steel-pinion-for-fury-wagon-fx118)  | $34.99 | 
@@ -43,3 +43,125 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 | [Screw Set](https://www.aliexpress.com/item/1005002438190831.html) | $22.65 |
 | Total Price Before Tax   | $***  |
 | Total Price   | $***  |
+
+
+# Power <a class="anchor" id="Power"></a>
+
+## Power Budget
+
+| Component | Voltage (V) | Current (A) | Power (W) | Notes / Rail |
+| :--- | :--- | :--- | :--- | :--- |
+| Raspberry Pi 5 | 5.0 | 1.80 | 9.00 | 5V Regulated Rail |
+| Pi Camera | 5.0 | 0.25 | 1.25 | 5V Regulated Rail |
+| Arduino Nano | 5.0 | 0.03 | 0.15 | 5V Regulated Rail |
+| D500 LiDAR | 5.0 | 0.20 | 1.00 | 5V Regulated Rail |
+| HS-5055MG Servo | 6.0 | 0.15 | 0.90 | 6V BEC Rail |
+| Furitek ESC Electronics | 6.0 | 0.05 | 0.30 | 6V BEC Rail |
+| Furitek Micro Komodo 1212 Motor | 11.1 | 2.00 | 22.20 | 11.1V Direct Rail |
+| **Total Device Power** | | | **34.80 W** | |
+
+---
+
+## Battery Specifications
+
+| Parameter | Value |
+| :--- | :--- |
+| **Brand / Model** | Zeee 3S LiPo |
+| **Battery Type** | LiPo |
+| **Cell Count** | 3S |
+| **Nominal Voltage** | 11.1 V |
+| **Capacity** | 2200 mAh (2.2 Ah) |
+| **Energy** | 24.42 Wh ($11.1\text{ V} \times 2.2\text{ Ah}$) |
+| **Discharge Rating** | 50C |
+| **Maximum Continuous Current** | 110 A ($2.2\text{ Ah} \times 50\text{C}$) |
+
+---
+
+## Regulator & BEC Efficiency Losses
+
+* **5V Regulated Rail (Yahboom Power Board @ 92% Efficiency):**
+
+The Yahboom Raspberry Pi 5 power board operates at approximately **92% efficiency**. Supplying the 11.4 W 5V rail requires approximately 12.39 W from the battery, resulting in about 0.99 W of conversion losses.
+  * 5V rail power demand: `11.40 W`
+  * Battery-side power required: $\frac{11.40\text{ W}}{0.92} = 12.39\text{ W}$
+  * 5V conversion losses: `0.99 W`
+
+* **6V BEC Rail (Furitek Lizard Pro Internal BEC @ 85% Efficiency):**
+
+A BEC (Battery Eliminator Circuit) loses efficiency primarily because converting a higher voltage (like 11.1V from a 3S LiPo) down to a lower voltage (like 6.0V for a servo) generates heat and requires power to run its own circuit.
+  * 6V rail power demand: `1.20 W` ($0.90\text{ W} + 0.30\text{ W}$)
+  * Battery-side power required: $\frac{1.20\text{ W}}{0.85} = 1.41\text{ W}$
+  * 6V conversion losses: `0.21 W`
+
+---
+
+
+## Total Battery Power Consumption
+
+| Quantity | Value |
+| :--- | :--- |
+| **Total Device Power** | 34.80 W |
+| **5V Regulator Losses** | 0.99 W |
+| **6V BEC Conversion Losses** | 0.21 W |
+| **Total Battery Power Draw** | **36.00 W** |
+
+---
+
+## Runtime Calculation
+
+$$\text{Runtime} = \frac{\text{Battery Energy}}{\text{Total Power}} = \frac{24.42\text{ Wh}}{36.00\text{ W}} \approx 0.678\text{ hours}$$
+
+$$0.678\text{ h} \times 60 \approx 40.7\text{ minutes}$$
+
+---
+
+## Estimated Runtime
+
+| Operating Condition | Runtime |
+| :--- | :--- |
+| Full-speed continuous driving | ~40 min |
+| A normal WRO run (mixed acceleration) | ~50–60 min |
+| Idle robot with vision processing | ~90 min |
+
+---
+
+## Battery Current Draw & Capability Check
+
+### Average Battery Current
+$$I_{\text{avg}} = \frac{P_{\text{total}}}{V_{\text{nominal}}} = \frac{36.00\text{ W}}{11.1\text{ V}} \approx 3.24\text{ A}$$
+
+### Peak & Discharge Safety Margin
+* **Zeee 3S Battery Continuous Max:** `110 A` ($2.2\text{ Ah} \times 50\text{C}$)
+* **Estimated Peak Demand:** `12–16 A` (Motor stall + high servo load)
+* **Safety Margin Factor:** $\frac{110\text{ A}}{16\text{ A}} \approx 6.87\times$
+
+The Zeee LiPo battery can comfortably supply peak loads well within thermal safety limits.
+
+---
+
+## Power Rail Distribution
+
+### 11.1V Direct Battery Rail
+* **Connected Components:** Furitek Lizard Pro ESC & Furitek Micro Komodo 1212 Motor
+* **Average Current:** `2.00 A`
+* **Peak Current:** `8.00–12.00 A`
+* **Average Power:** `22.20 W`
+
+### 6V BEC Rail (Integrated ESC BEC @ 85% Efficiency)
+* **Connected Components:** HS-5055MG Servo & ESC Electronics
+* **Average Current:** $0.15\text{ A} + 0.05\text{ A} = 0.20\text{ A}$
+* **Peak Current:** $0.70\text{ A} + 0.10\text{ A} \approx 0.80\text{ A}$
+* **Average Power:** $6.0\text{ V} \times 0.20\text{ A} = 1.20\text{ W}$
+
+### 5V Regulated Rail (Yahboom Power Board @ 92% Efficiency)
+* **Connected Components:** Raspberry Pi 5, Camera, D500 LiDAR, Arduino Nano
+* **Average Current:** $1.80\text{ A} + 0.25\text{ A} + 0.20\text{ A} + 0.03\text{ A} = 2.28\text{ A}$
+* **Power Delivered to Electronics:** $5.0\text{ V} \times 2.28\text{ A} = 11.40\text{ W}$
+* **Battery Power Consumed (with efficiency loss):** $\frac{11.40\text{ W}}{0.92} = 12.39\text{ W}$
+* **Battery Current Consumed:** $\frac{12.39\text{ W}}{11.1\text{ V}} \approx 1.12\text{ A}$
+* **Recommended Regulator Rating:** Minimum `5V @ 4A` continuous output.
+
+
+
+## Overview
+The robot’s power source is an 11.1V, 2200mAh, 3-cell LiPo battery. The drive unit includes a Furitek Micro Komodo BLDC motor and Furitek Lizard Pro controller. A 5V power supply is used for powering the Raspberry Pi 5, LiDAR sensor, camera, and Arduino Nano. The average total battery power consumption of the robot is 36.0 W, which includes the Raspberry Pi 5 (9.0 W), camera (1.25 W), LiDAR sensor (1.0 W), steering servo (0.9 W), Arduino Nano (0.15 W), Furitek electronics and brushless drive system (22.5 W), and conversion losses (1.20 W). The average current consumption from the battery is approximately 3.24 A, which provides an estimated continuous full-speed runtime of about 40 minutes (and 50–60 minutes under typical WRO run conditions). The estimated maximum peak current demand during acceleration or stall is 12–16 A.
