@@ -38,6 +38,14 @@
 
 ---
 
+
+
+## Why we changed our robot
+
+
+
+
+
 ### 4. Sensors and Future Hardware Expansion
 * **Vision:** Raspberry Pi camera for visual tracking in real time.
 * **D500 LiDAR (Not Connected / Plugged in):**
