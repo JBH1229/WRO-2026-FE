@@ -48,6 +48,7 @@ MAX_PILLAR_Y = 300
 RED_TARGET_CX = 40
 GREEN_TARGET_CX = 600
 PILLAR_EXIT_FRAMES = 8
+recovery_mode = False
 #@log
 def send_servo(value):
     global servo_value
@@ -205,6 +206,7 @@ def best_pillar(mask):
 LAB_BLACK_LOWER = np.array([0,   0,   0], dtype=np.uint8)
 LAB_BLACK_UPPER = np.array([70, 180, 255], dtype=np.uint8)
 
+    
 # --- Turning-state requirements (your rules) ---
 LEFT_ENTER_TURN_THRESH = 1000      # condition: leftArea OR rightArea < 550
 RIGHT_ENTER_TURN_THRESH = 1000
@@ -215,6 +217,7 @@ EXIT_TIME_THRESH = 1.5 #                                                        
 MAX_TIME_SEC 	  = 10.0
 TURN_LEFT_ANGLE   = 41 # change lower if nessassary  avg 41
 TURN_RIGHT_ANGLE  = 81 # change higher if nessassary avg 81
+RECOVERY_CORRECTION = 5 # reduces the turn rate by this much when recovering
 MAX_TURN_RATE = 40
 # --- Anti-false-trigger improvement ---
 # Require the enter condition to be true for N consecutive frames
@@ -239,6 +242,39 @@ kp_avoid = 0.15
 mode_change = True
 prev_error = 0
 frames_without_pillar = 0
+
+def recovery(side, left_area, right_area, time, old_time)
+    global active_color
+    global mode
+    global prev_error
+    global frames_without_pillar
+    global recovery_mode
+    if active_color is not None:
+        mode = MODE_PILLAR_AVOID
+        send_motor(PILLAR_AVOID_SPEED)
+        return
+    if side == "left":
+        send_servo(TURN_LEFT_ANGLE + RECOVERY_CORRECTION)
+        exit_thresh = left_area > LEFT_EXIT_GROW_THRESH
+    else:
+        send_servo(TURN_RIGHT_ANGLE - RECOVERY_CORRECTION)
+        exit_thresh = right_area > RIGHT_EXIT_GROW_THRESH
+    if exit_thresh:
+        mode = MODE_WALL_FOLLOW
+        frames_without_pillar = 0
+        prev_error = 0
+        send_motor(WALL_FOLLOW_MOTOR_VALUE)
+        recovery_mode = False
+        return
+    time_thresh = time-old_time
+    if time_thresh:
+        mode = MODE_CORNER_TURN
+        frames_without_pillar = 0
+        prev_error = 0
+        send_motor(CORNER_TURN_MOTOR_VALUE)
+        recovery_mode = False
+        return
+    
 last_time = time.monotonic()
 #start moving (motor start)
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
@@ -368,8 +404,10 @@ try:
             elif mode == MODE_PILLAR_AVOID:
                 if active_color == "red":
                     target_cx = RED_TARGET_CX
+                    prev_red = True
                 else:
                     target_cx = GREEN_TARGET_CX
+                    prev_red = False
                 error_avoid = active_cx - target_cx
                 correction = int(kp_avoid+error_avoid)
                 if correction > MAX_TURN_RATE:
@@ -383,12 +421,15 @@ try:
                     frames_without_pillar = frames_without_pillar + 1
                 else:
                     frames_without_pillar = 0
-                    color_override = False
                 if frames_without_pillar >= PILLAR_EXIT_FRAMES:
-                    mode = MODE_WALL_FOLLOW
-                    frames_without_pillar = 0
-                    prev_error = 0
-                    send_motor(WALL_FOLLOW_MOTOR_VALUE)
+                    if not recovery_mode:
+                        start_time = now
+                    recovery_mode = True
+                    if prev_red:
+                        recovery("left", leftArea, rightArea, now, start_time)
+                    else:
+                        recovery("right", leftArea, rightArea, now, start_time)
+
             else:  # MODE_CORNER_TURN
                 if prev_mode != mode: 
                     send_motor(CORNER_TURN_MOTOR_VALUE)
