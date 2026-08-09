@@ -4,10 +4,31 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 
 ## Table of Contents
 * [The Team](#team-members)
+* [Engineering Journal](#engineering-journal)
+* [The Challenge](#the-future-engineers-challenge)
+* [The Robot](#robot)
+  * [First Design](#first)
+  * [Final Design](#final)
+* [Performance Videos](#video)
+  * [Open challenge](#OPCV)
+  * [Obstacle Challenge](#OBCV)  
 * [Prices](#price-of-the-components)
 * [Power](#power)
-* [Engineering Journal](#engineering-journal)
+* [Management](#management)
+  * [Mobility Management](#mobility-management)
+      * [Motor](#motor)
+      * [Servo Motor](#servo-motor)
+      * [Wheels](#wheels)
+  * [Power and Sense Management](#power-and-sense-management)
+    * [Battery](#battery)
+    * [Raspi Camera](#camera)
+    * [LiDAR](#lidar)
+    * [Raspberry Pi 5](#pi)
+    * [Regulator](#regulator)
+    * [Circuit Diagram](#circuit-diagram)
 * [Software](#software)
+* [Future Potential Improvements](#potential-improvements)
+
 # Team Members
 
 ### Jonathan Huang
@@ -27,6 +48,23 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 
 # Engineering Journal
 Here is the link to our [Engineering Journal google document](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
+
+# The Future Engineers Challenge
+### Open Challenge
+
+The **Open Challenge** tests our robot's ability to drive autonomously around the track. The robot must complete three laps while adapting to different track layouts, starting positions, and driving directions. The goal is to create a fast and reliable self-driving vehicle that can navigate the track and stop whenever needed without human control.
+
+### Obstacle Challenge
+
+The **Obstacle Challenge** adds red and green traffic signs to the track as well as a parking area. Teams have a option to start and end within the parking area to accumulate more points. While completing three laps, the robot must identify the traffic signs and choose the correct side of the lane to pass on. After finishing the laps, the robot will optionally find the parking area and successfully perform a parallel park.
+### Documentation
+
+The **Documentation** focuses on explaining how our robot was designed and developed. Our GitHub repository includes information about the robot's hardware, software, sensors, power system, and driving strategies. It also contains photos, videos, source code, and updates showing our engineering process and improvements throughout the project.
+
+Learn more about the challenges WRO has to offer and the rules in accordance [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
+
+# Robot
+
 # Price of the Components
 | Component  | Cost |
 | ------------- | ------------- |
