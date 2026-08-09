@@ -38,16 +38,17 @@
 
 ---
 
-
-
-## Why we changed the robot
-
-
-
-
-
 ### 4. Sensors and Future Hardware Expansion
 * **Vision:** Raspberry Pi camera for visual tracking in real time.
 * **D500 LiDAR (Not Connected / Plugged in):**
   * **Status:** The D500 LiDAR sensor with JST ZH-5 and JST ZH-6 connectors for DATA1, SPEED CONTROL1, and POWER & GND1 is mounted on the chassis but not yet plugged in.
   * **Future Scope:** Will be connected to the Raspberry Pi’s UART or USB port for 2D/3D obstacle grid detection and wall-following algorithms.
+
+## Why we changed the robot
+Our first robot had a ton of problems and there is a lot of emphasize on ton, to see them all you can read our engineering journal [here](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0) where it provides information on each problem, the dates they appeared, and an solutions.
+
+
+
+
+
+
