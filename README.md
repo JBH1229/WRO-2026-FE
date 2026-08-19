@@ -1,13 +1,35 @@
-# WRO-Future-Engineers-2026
+# WRO Future Engineers 2026
 Our repository for the 2026 World Robot Olympiad: in the category Future engineers
 
 
 ## Table of Contents
-* [The Team](#team)
-* [Prices](#Price)
+* [The Team](#team-members)
+* [Engineering Journal](#engineering-journal)
+* [The Challenge](#the-future-engineers-challenge)
+* [The Robot](#robot)
+  * [First Design](#first-design)
+  * [Final Design](#final-design)
+* [Performance Videos](#video)
+  * [Open challenge](#OPCV)
+  * [Obstacle Challenge](#OBCV)  
+* [Prices](#price-of-the-components)
+* [Power](#power)
+* [Management](#management)
+  * [Mobility Management](#mobility-management)
+      * [Motor](#motor)
+      * [Servo Motor](#servo-motor)
+      * [Wheels](#wheels)
+  * [Power and Sense Management](#power-and-sense-management)
+    * [Battery](#battery)
+    * [Raspi Camera](#camera)
+    * [LiDAR](#lidar)
+    * [Raspberry Pi 5](#pi)
+    * [Regulator](#regulator)
+    * [Circuit Diagram](#circuit-diagram)
+* [Software](#software)
+* [Future Potential Improvements](#potential-improvements)
 
-
-## Team Members <a class="anchor" id="team"></a>
+# Team Members
 
 ### Jonathan Huang
 **Age:** 15
@@ -24,15 +46,53 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
 
+# Engineering Journal
+Here is the link to our [Engineering Journal google document](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
 
-## Price of the Components <a class="anchor" id="Price"></a>
+# The Future Engineers Challenge
+### Open Challenge
+
+The **Open Challenge** tests our robot's ability to drive autonomously around the track. The robot must complete three laps while adapting to different track layouts, starting positions, and driving directions. The goal is to create a fast and reliable self-driving vehicle that can navigate the track and stop whenever needed without human control.
+
+### Obstacle Challenge
+
+The **Obstacle Challenge** adds red and green traffic signs to the track as well as a parking area. Teams have a option to start and end within the parking area to accumulate more points. While completing three laps, the robot must identify the traffic signs and choose the correct side of the lane to pass on. After finishing the laps, the robot will optionally find the parking area and successfully perform a parallel park.
+### Documentation
+
+The **Documentation** focuses on explaining how our robot was designed and developed. Our GitHub repository includes information about the robot's hardware, software, sensors, power system, and driving strategies. It also contains photos, videos, source code, and updates showing our engineering process and improvements throughout the project.
+
+Learn more about the challenges WRO has to offer and the rules in accordance [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
+
+# Robot
+### First design
+These are a couple pictures of the first variation of our robot
+| *Side* | *Camera Detached* |
+| :--: | :--: | 
+| <img src="./Images/first_robot_1.jpg" width="50%" height="50%" /> | <img src="./Images/first_robot_3.jpg" width="50%" height="50%" /> | 
+### Final design
+Here is a GIF and photos of our final design
+| *360° View* |
+| :--:|
+| *####MISSING####* |
+
+| *Front* | *Back* |
+| :--: | :--: |
+| <img src="./images/robotfront.jpg" width="50%" height="50%" /> | <img src="./images/robotback.jpg" width="50%" height="50%" /> | 
+| *Left* | *Right* |
+| <img src="./images/robotleft.jpg" width="50%" height="50%" /> | <img src="./images/robotright.jpg" width="50%" height="50%" /> | 
+| *Top* | *Bottom* |
+| <img src="./images/robottop.jpg" width="50%" height="50%" /> | <img src="./images/robotbottom.jpg" width="50%" height="50%" /> | 
+
+Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main differences between the first and final renditions of our robot
+
+# Price of the Components
 | Component  | Cost |
 | ------------- | ------------- |
 | [BLDC Motor](https://furitek.com/products/furitek-micro-komodo-1212-3456kv-brushless-motor-with-15t-steel-pinion-for-fury-wagon-fx118)  | $34.99 | 
 | [Furitek Lizard Pro ESC](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) | $79.99 | [here](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) |
 | [Servo Motor](https://hitecrcd.com/hs-5055mg-economy-metal-gear-feather-servo/)  | $29.99  |
-| [Camera](https://www.aliexpress.com/item/1005006913591702.html?spm=a2g0o.tesla.0.0.4560FbAVFbAVpn&pdp_npi=6%40dis%21CAD%21C%2412.32%21C%242.08%21%21%21%21%21%402103126e17687701347117473e21ac%2112000038708544630%21btfpre%21%21%21%211%210%21&afTraceInfo=1005006913591702__pc__c_ppc_item_bridge_pc_related_wf__lsTNOZH__1768770134968)  | $6 |
-| [Raspberry Pi 5 + MicroSD card](https://www.pishop.ca/product/raspberry-pi-5-8gb/?src=raspberrypi)  | $168.75  |
+| [Camera](https://www.amazon.ca/dp/B0D324RKRZ?ref=ppx_yo2ov_dt_b_fed_asin_title)  | $43.56 |
+| [Raspberry Pi 5 + MicroSD card + Additions](https://www.pishop.ca/product/raspberry-pi-5-8gb/?src=raspberrypi)  | $312.80  |
 | [Arduino Nano](https://store-usa.arduino.cc/products/nano-33-ble-sense-rev2-with-headers)   | $39.70  |
 | [Chassis](https://www.aliexpress.com/item/1005010095696996.html?spm=a2g0o.productlist.main.5.723cofcWofcWlh&algo_pvid=2a715fdb-fb6d-4899-8280-a215c2b2d032&algo_exp_id=2a715fdb-fb6d-4899-8280-a215c2b2d032-4&pdp_ext_f=%7B%22order%22%3A%2275%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21CAD%21576.58%21138.38%21%21%212894.48%21694.68%21%40210328c017699769899361575e43e8%2112000051128234698%21sea%21CA%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A144f3923%3Bm03_new_user%3A-29895&curPageLogUid=zbORjXdo3UaO&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005010095696996%7C_p_origin_prod%3A#nav-review)  | $140.38  |
 | [3-cell Battery](https://www.amazon.ca/Zeee-Battery-Connector-Airplane-Helicopter/dp/B0D5LKXHBK/ref=sr_1_5?crid=2JRB855SKW7EL&dib=eyJ2IjoiMSJ9.zuMSsrpJTPMqUC9ImIBkmV4v4x4hdFTFq9BqWiEWE0jqOxI6oDn5l1-ZgCRG0X88Kbh_ngpDrcc41PEd67Tv4SMC3-YfOILewxoaVUX26pIiGS3GsPwA1lSosDHRkJqGSuboG13pQzZT8-YMQDT6nLyrvlKogiwD2-4ZJqq-w9Zfc-BIydlygDGrIcn9Iq8gRbixYnQTLDIbxYkFMJwV-vm6SSuI4JJFe2qe2MX1r9d4_WRuxW5mZKGwtqqm8_BORUz9hJPijcxB6StPEOHx4_ty6BIzwp5swaUASUKlbtE.9GlojnF5dxjozmO9taqUzfztTD3UhDYnDdFgq4NITd0&dib_tag=se&keywords=11.1+v+cell+battery&qid=1769377081&sprefix=11+1+v+cell+battery%2Caps%2C133&sr=8-5)  | $46.99  |
@@ -43,3 +103,242 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I 
 | [Screw Set](https://www.aliexpress.com/item/1005002438190831.html) | $22.65 |
 | Total Price Before Tax   | $***  |
 | Total Price   | $***  |
+
+***The additions to the RASPI 5 include but are not limited to USB-C PD Power Supply, Raspi Active Cooler, and a Micro-HDMI to HDMI cable***
+
+# Power
+
+## Power Budget
+
+| Component | Voltage (V) | Current (A) | Power (W) | Notes / Rail |
+| :--- | :--- | :--- | :--- | :--- |
+| Raspberry Pi 5 | 5.0 | 1.80 | 9.00 | 5V Regulated Rail |
+| Pi Camera | 5.0 | 0.25 | 1.25 | 5V Regulated Rail |
+| Arduino Nano | 5.0 | 0.03 | 0.15 | 5V Regulated Rail |
+| D500 LiDAR | 5.0 | 0.20 | 1.00 | 5V Regulated Rail |
+| HS-5055MG Servo | 6.0 | 0.15 | 0.90 | 6V BEC Rail |
+| Furitek ESC Electronics | 6.0 | 0.05 | 0.30 | 6V BEC Rail |
+| Furitek Micro Komodo 1212 Motor | 11.1 | 2.00 | 22.20 | 11.1V Direct Rail |
+| **Total Device Power** | | | **34.80 W** | |
+
+---
+
+## Battery Specifications
+
+| Parameter | Value |
+| :--- | :--- |
+| **Brand / Model** | Zeee 3S LiPo |
+| **Battery Type** | LiPo |
+| **Cell Count** | 3S |
+| **Nominal Voltage** | 11.1 V |
+| **Capacity** | 2200 mAh (2.2 Ah) |
+| **Energy** | 24.42 Wh ($11.1\text{ V} \times 2.2\text{ Ah}$) |
+| **Discharge Rating** | 50C |
+| **Maximum Continuous Current** | 110 A ($2.2\text{ Ah} \times 50\text{C}$) |
+
+---
+
+## Regulator & BEC Efficiency Losses
+
+* **5V Regulated Rail (Yahboom Power Board @ 92% Efficiency):**
+
+The Yahboom Raspberry Pi 5 power board operates at approximately **92% efficiency**. Supplying the 11.4 W 5V rail requires approximately 12.39 W from the battery, resulting in about 0.99 W of conversion losses.
+  * 5V rail power demand: `11.40 W`
+  * Battery-side power required: $\frac{11.40\text{ W}}{0.92} = 12.39\text{ W}$
+  * 5V conversion losses: `0.99 W`
+
+* **6V BEC Rail (Furitek Lizard Pro Internal BEC @ 85% Efficiency):**
+
+A BEC (Battery Eliminator Circuit) loses efficiency primarily because converting a higher voltage (like 11.1V from a 3S LiPo) down to a lower voltage (like 6.0V for a servo) generates heat and requires power to run its own circuit.
+  * 6V rail power demand: `1.20 W` ($0.90\text{ W} + 0.30\text{ W}$)
+  * Battery-side power required: $\frac{1.20\text{ W}}{0.85} = 1.41\text{ W}$
+  * 6V conversion losses: `0.21 W`
+
+---
+
+
+## Total Battery Power Consumption
+
+| Quantity | Value |
+| :--- | :--- |
+| **Total Device Power** | 34.80 W |
+| **5V Regulator Losses** | 0.99 W |
+| **6V BEC Conversion Losses** | 0.21 W |
+| **Total Battery Power Draw** | **36.00 W** |
+
+---
+
+## Runtime Calculation
+
+$$\text{Runtime} = \frac{\text{Battery Energy}}{\text{Total Power}} = \frac{24.42\text{ Wh}}{36.00\text{ W}} \approx 0.678\text{ hours}$$
+
+$$0.678\text{ h} \times 60 \approx 40.7\text{ minutes}$$
+
+---
+
+## Estimated Runtime
+
+| Operating Condition | Runtime |
+| :--- | :--- |
+| Full-speed continuous driving | ~40 min |
+| A normal WRO run (mixed acceleration) | ~50–60 min |
+| Idle robot with vision processing | ~90 min |
+
+---
+
+## Battery Current Draw & Capability Check
+
+### Average Battery Current
+$$I_{\text{avg}} = \frac{P_{\text{total}}}{V_{\text{nominal}}} = \frac{36.00\text{ W}}{11.1\text{ V}} \approx 3.24\text{ A}$$
+
+### Peak & Discharge Safety Margin
+* **Zeee 3S Battery Continuous Max:** `110 A` ($2.2\text{ Ah} \times 50\text{C}$)
+* **Estimated Peak Demand:** `12–16 A` (Motor stall + high servo load)
+* **Safety Margin Factor:** $\frac{110\text{ A}}{16\text{ A}} \approx 6.87\times$
+
+The Zeee LiPo battery can comfortably supply peak loads well within thermal safety limits.
+
+---
+
+## Power Rail Distribution
+
+### 11.1V Direct Battery Rail
+* **Connected Components:** Furitek Lizard Pro ESC & Furitek Micro Komodo 1212 Motor
+* **Average Current:** `2.00 A`
+* **Peak Current:** `8.00–12.00 A`
+* **Average Power:** `22.20 W`
+
+### 6V BEC Rail (Integrated ESC BEC @ 85% Efficiency)
+* **Connected Components:** HS-5055MG Servo & ESC Electronics
+* **Average Current:** $0.15\text{ A} + 0.05\text{ A} = 0.20\text{ A}$
+* **Peak Current:** $0.70\text{ A} + 0.10\text{ A} \approx 0.80\text{ A}$
+* **Average Power:** $6.0\text{ V} \times 0.20\text{ A} = 1.20\text{ W}$
+
+### 5V Regulated Rail (Yahboom Power Board @ 92% Efficiency)
+* **Connected Components:** Raspberry Pi 5, Camera, D500 LiDAR, Arduino Nano
+* **Average Current:** $1.80\text{ A} + 0.25\text{ A} + 0.20\text{ A} + 0.03\text{ A} = 2.28\text{ A}$
+* **Power Delivered to Electronics:** $5.0\text{ V} \times 2.28\text{ A} = 11.40\text{ W}$
+* **Battery Power Consumed (with efficiency loss):** $\frac{11.40\text{ W}}{0.92} = 12.39\text{ W}$
+* **Battery Current Consumed:** $\frac{12.39\text{ W}}{11.1\text{ V}} \approx 1.12\text{ A}$
+* **Recommended Regulator Rating:** Minimum `5V @ 4A` continuous output.
+
+
+
+## Overview
+The robot’s power source is an 11.1V, 2200mAh, 3-cell LiPo battery. The drive unit includes a Furitek Micro Komodo BLDC motor and Furitek Lizard Pro controller. A 5V power supply is used for powering the Raspberry Pi 5, LiDAR sensor, camera, and Arduino Nano. The average total battery power consumption of the robot is 36.0 W, which includes the Raspberry Pi 5 (9.0 W), camera (1.25 W), LiDAR sensor (1.0 W), steering servo (0.9 W), Arduino Nano (0.15 W), Furitek electronics and brushless drive system (22.5 W), and conversion losses (1.20 W). The average current consumption from the battery is approximately 3.24 A, which provides an estimated continuous full-speed runtime of about 40 minutes (and 50–60 minutes under typical WRO run conditions). The estimated maximum peak current demand during acceleration or stall is 12–16 A.
+
+
+# Software
+# Autonomous Robot State Machine Documentation
+
+## 1. ASCII State Machine Diagram
+
+```text
+                        +---------------------------------------+
+                        |            INITIALIZATION             |
+                        | - Init Serial & Cam                   |
+                        | - Servo = 66                          |
+                        | - Motor = 1500 -> 1622                |
+                        +-------------------+-------------------+
+                                            |
+                                            v
+                        +---------------------------------------+
+   +------------------->|              WALL_FOLLOW              |<-------------------+
+   |                    | - Steering: PD Control                |                    |
+   |                    |   (leftArea-rightArea)                |                    |
+   |                    | - Speed = 1622                        |                    |
+   |                    +----+-----------------------------+----+                    |
+   |                         |                             |                         |
+   |                         |                             |                         |
+[No Pillar for               |                             | [low_left/right         | [Gyro turned
+ 8 consecutive               | [Active Color]              |  for 5 frames           |  <= GYRO_VAL]
+ frames]                     |                             |  AND time_elapsed]      |  OR [Area grew
+   |                         v                             v                         |  AND time_ok]
+   |            +-------------------------+   +-------------------------+            |
+   +------------|      PILLAR_AVOID       |   |       CORNER_TURN       |------------+
+                | - Target CX:            |   | - Servo: 41° L / 81° R  |
+                |   Red(40)/Grn(600)      |   | - Speed = 1622          |
+                | - Steering: P Control   |   | - turn_count ++         |
+                +-------------------------+   | - lap_count ++          |
+                                              |   (every 4 turns)       |
+                                              +------------+------------+
+                                                           |
+                                                   [turn_count >= 12]
+                                                           |
+                                                           v
+                        +---------------------------------------+
+                        |                END_RUN                |
+                        | - end_run_counter ++                  |
+                        +-------------------+-------------------+
+                                            |
+                                  [counter >= 100 frames]
+                                            |
+                                            v
+                        +---------------------------------------+
+                        |                 STOP                  |
+                        | - Servo = 66 (Center)                 |
+                        | - Motor = 1500 (Stop)                 |
+                        | - Cleanup & Exit                      |
+                        +---------------------------------------+
+```
+
+---
+
+## 2. State Descriptions
+
+### INITIALIZATION
+* **Function**: Sets up hardware interfaces (Serial connection with Arduino running at 115200 baud rate, setting up PiCamera2)
+* **Operations**:
+  * Default position set for the servos (66) and for the motor (1500).
+  * Serial buffer reset and Motor Drive operation set to start driving (1622).
+* **Next State**: Transition to WALL_FOLLOW occurs immediately.
+
+### WALL_FOLLOW
+* **Function**: Operating state by default. It moves straight ahead in the lanes using wall following.
+* **Controller**: PD Controller based on the difference in area between the left (ROI1) and right (ROI2) black walls' contours.
+  $$\text{error} = \frac{\text{leftArea} - \text{rightArea}}{\text{leftArea} + \text{rightArea}}$$
+* **Transitions**:
+  * **To PILLAR_AVOID**: Occurs when active_color is observed (`red_area` or `green_area` > MIN_REACT_AREA [800]).
+  * **To CORNER_TURN**: Occurs when low_left or low_right (< 1000) is observed for ENTER_CONFIRM_FRAMES (5) successive frames and time_elapsed is true.
+  * **To END_RUN**: Occurs when turn_count >= TURN_LIMIT (12).
+
+### PILLAR_AVOID
+* **Purpose**: Dodges obstacle pillars through detection with HSV color thresholding.
+* **Control Logic**:
+  * Target RED_TARGET_CX (40) for red pillars or GREEN_TARGET_CX (600) for green pillars.
+  * Utilizes Proportional control using dynamic cx error correction formula:
+    $$\text{correction} = kp_{\text{avoid}} + (active_{\text{cx}} - target_{\text{cx}})$$
+* **Transitions**:
+  * **To WALL_FOLLOW**: Triggers when frames_without_pillar >= PILLAR_EXIT_FRAMES (8 frames).
+
+### CORNER_TURN
+* **Purpose**: Implements predetermined 90° turns.
+* **Control Logic**:
+  * Runs with motor at CORNER_TURN_MOTOR_VALUE (1622).
+  * Turns servo at TURN_LEFT_ANGLE (41°) or TURN_RIGHT_ANGLE (81°) as dictated by turn_trigger_side.
+  * Increases turn_count by 1, increment lap_count every 4 turns.
+* **Transitions**:
+  * **To WALL_FOLLOW**:
+    * **If Gyro Mode is active (TOGGLE_GYRO_TURN)**: Triggers when abs_turn_heading <= GYRO_TURN_VAL (15°).
+    * **If Vision Mode is active**: Triggers when wall contour area increases past threshold (grew_ok) AND EXIT_TIME_SEC elapsed OR MAX_TIME_SEC (10.0s) elapsed.
+
+### END_RUN & STOP
+* **Purpose**: Shutdown protocol after run completion.
+* **Actions**:
+  * Counts up to END_RUN_LIMIT (100 frames).
+  * Neutralizes steer at 66 and motor at 1500.
+  * Releases camera feed and serial port.
+  
+---
+
+## 3. Threshold & Control Constants
+
+| Constant | Value | Unit / Description |
+| :--- | :--- | :--- |
+| `WALL_FOLLOW_MOTOR_VALUE` | `1622` | Forward driving speed pulse width |
+| `LEFT_ENTER_TURN_THRESH` | `1000` | Area drop threshold for corner entry |
+| `ENTER_CONFIRM_FRAMES` | `5` | Debounce frame count before turning |
+| `PILLAR_EXIT_FRAMES` | `8` | Consecutive clear frames required to exit avoid mode |
+| `MIN_REACT_AREA` | `800` | Minimum pillar contour area to trigger avoidance |
+| `TURN_LIMIT` | `12` | Total corners completed before terminating run |
+| `Kp` / `Kd` | `15` / `-1` | PD parameters for wall following |
