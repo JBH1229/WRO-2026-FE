@@ -2,6 +2,19 @@
 Our repository for the 2026 World Robot Olympiad: in the category Future engineers
 
 
+# Team Costco Hotdog
+<img src="./Images/Team Costco Hotdog.png" width="90%" height="90%" />
+
+## Explorer Robotics
+
+
+<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/ca0a4e61-2057-4a0d-8004-57cb2cea922c " />
+
+[![Website](https://img.shields.io/badge/Website-Visit-orange?style=for-the-badge&logo=web&logoColor=white)](https://explorer-robotics.com/index.html)
+
+
+
+
 ## Table of Contents
 * [The Team](#team-members)
 * [Engineering Journal](#engineering-journal)
@@ -45,6 +58,23 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 **Introduction:**
 Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
+# Our Coach
+<table>
+  <tr>
+    <td width="50%" style="text-align: left;">
+      <img src="https://explorer-robotics.com/images/users/CoachRice.png" width="7500%"> 
+    </td>
+    <td width="50%" style="text-align: left; vertical-align: top;">
+      <h3>Accolades:</h3>
+      <ul>
+        <li>Head coach of Robotics Competitions including FLL (First LEGO League) Tournament and WRO (World Robotics Olympiad). Led teams in winning multiple national, international robotics and programming awards.</li>
+        <li>Over 20 years of IT industry experience as software engineer working internationally.</li>
+        <li>MSc in Electrical & Computer Engineering from University of Alberta.</li>
+        <li>BSc in Mathematics from Peking University.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
 # Engineering Journal
 Here is the link to our [Engineering Journal google document](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
@@ -91,7 +121,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | [BLDC Motor](https://furitek.com/products/furitek-micro-komodo-1212-3456kv-brushless-motor-with-15t-steel-pinion-for-fury-wagon-fx118)  | $34.99 | 
 | [Furitek Lizard Pro ESC](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) | $79.99 | [here](https://furitek.com/products/combo-of-furitek-lizard-pro-30a-50a-brushed-brushless-esc-for-axial-scx24-with-bluetooth) |
 | [Servo Motor](https://hitecrcd.com/hs-5055mg-economy-metal-gear-feather-servo/)  | $29.99  |
-| [Camera](https://www.amazon.ca/dp/B0D324RKRZ?ref=ppx_yo2ov_dt_b_fed_asin_title)  | $43.56 |
+| [Camera](https://www.amazon.ca/dp/B0D324RKRZ?ref=ppx_yo2ov_dt_b_fed_asin_title)  | $43.30 |
 | [Raspberry Pi 5 + MicroSD card + Additions](https://www.pishop.ca/product/raspberry-pi-5-8gb/?src=raspberrypi)  | $312.80  |
 | [Arduino Nano](https://store-usa.arduino.cc/products/nano-33-ble-sense-rev2-with-headers)   | $39.70  |
 | [Chassis](https://www.aliexpress.com/item/1005010095696996.html?spm=a2g0o.productlist.main.5.723cofcWofcWlh&algo_pvid=2a715fdb-fb6d-4899-8280-a215c2b2d032&algo_exp_id=2a715fdb-fb6d-4899-8280-a215c2b2d032-4&pdp_ext_f=%7B%22order%22%3A%2275%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21CAD%21576.58%21138.38%21%21%212894.48%21694.68%21%40210328c017699769899361575e43e8%2112000051128234698%21sea%21CA%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A144f3923%3Bm03_new_user%3A-29895&curPageLogUid=zbORjXdo3UaO&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005010095696996%7C_p_origin_prod%3A#nav-review)  | $140.38  |
