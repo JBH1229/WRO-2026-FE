@@ -8,7 +8,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 ## Explorer Robotics
 
 
-<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/ca0a4e61-2057-4a0d-8004-57cb2cea922c " />
+<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/ca0a4e61-2057-4a0d-8004-57cb2cea922c" />
 
 [![Website](https://img.shields.io/badge/Website-Visit-orange?style=for-the-badge&logo=web&logoColor=white)](https://explorer-robotics.com/index.html)
 
