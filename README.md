@@ -22,6 +22,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 * [The Robot](#robot)
   * [Overview](#overview) 
   * [First Design](#first-design)
+  * [Design Decisions](#design-decisions)
   * [Final Design](#final-design)
 * [Prices](#price-of-the-components)
 * [Power](#power)
