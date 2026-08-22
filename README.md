@@ -20,19 +20,17 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
 * [Engineering Journal](#engineering-journal)
 * [The Challenge](#the-future-engineers-challenge)
 * [The Robot](#robot)
+  * [Overview](#overview) 
   * [First Design](#first-design)
   * [Final Design](#final-design)
-* [Performance Videos](#video)
-  * [Open challenge](#OPCV)
-  * [Obstacle Challenge](#OBCV)  
 * [Prices](#price-of-the-components)
 * [Power](#power)
-* [Management](#management)
-  * [Mobility Management](#mobility-management)
+* [Systems](#management)
+  * [Mechanical System](#mobility-management)
       * [Motor](#motor)
       * [Servo Motor](#servo-motor)
       * [Wheels](#wheels)
-  * [Power and Sense Management](#power-and-sense-management)
+  * [Electrical & Sensor System](#power-and-sense-management)
     * [Battery](#battery)
     * [Raspi Camera](#camera)
     * [LiDAR](#lidar)
@@ -40,6 +38,11 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
     * [Regulator](#regulator)
     * [Circuit Diagram](#circuit-diagram)
 * [Software](#software)
+* [Testing](#testing)
+  * [Test Results](#test-results)
+  * [Performance Videos](#video)
+    * [Open challenge](#OPCV)
+    * [Obstacle Challenge](#OBCV)
 * [Future Potential Improvements](#potential-improvements)
 
 # Team Members
@@ -94,12 +97,157 @@ The **Documentation** focuses on explaining how our robot was designed and devel
 Learn more about the challenges WRO has to offer and the rules in accordance [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
 
 # Robot
-### First design
+## Overview
+
+| Dimension | Measurement |
+|-----------|-------------|
+| Length | XX cm |
+| Width | XX cm |
+| Height | XX cm |
+| Wheelbase | XX cm |
+| Ground Clearance | XX cm |
+| Weight | XX g |
+
+## Drive Configuration
+
+The robot uses a **RWD** drivetrain powered by a **Furitek Micro Komodo 1212 brushless motor** and controlled by a **Furitek Lizard Pro ESC**.
+
+### Drive Components
+
+| Component | Specification |
+|-----------|---------------|
+| Motor | Furitek Micro Komodo 1212 |
+| Motor Type | Brushless DC |
+| ESC | Furitek Lizard Pro |
+| Drive Type | RWD |
+| Driven Wheels | 1/28 RC drift car wheels |
+
+The motor receives speed commands from the control system through the ESC which decodes PWM messages from Pi. The drivetrain converts the motor's rotation into forward and reverse movement.
+
+### DRIVE TRAIN PHOTO ###
+
+
+## Steering Configuration
+
+The robot uses **servo-based steering** to control its direction.
+
+### Steering Components
+
+| Component | Specification |
+|-----------|---------------|
+| Steering Servo | HS-5055MG Micro Servo |
+| Control Signal | PWM |
+| Maximum Steering Angle | __° |
+| Steering Type | Rack & Pinion |
+
+The steering servo is connected to the front steering mechanism through a mechanical linkage with it first connecting to a pinion gear and driving a gear system. The controller adjusts the servo position using PWM signals to change the robot's steering angle.
+
+### STEERING DIAGRAM PHOTO ###
+
+## Main Components
+
+| Component | Purpose |
+|-----------|---------|
+| Raspberry Pi 5 | Main computer and processing |
+| Arduino Nano | Low level commands and processing IMU data |
+| Furitek Micro Komodo 1212 | Drives the robot |
+| Furitek Lizard Pro ESC | Controls the drive motor |
+| Steering Servo | Controls steering |
+| D500 LiDAR | Distance measurement |
+| Raspberry Pi Camera | Vision and object detection |
+| 5 V Regulator | Powers 5 V electronics |
+| 11.1 V LiPo Battery | Main power source |
+| BMI270 IMU | Used for its gyro sensor |
+
+
+## Sensors
+
+The robot uses multiple sensors to perceive its surroundings and determine its position on the course.
+
+| Sensor | Purpose | 
+|--------|---------|
+| Raspberry Pi Camera | Detects and identifies objects/colours |
+| D500 LiDAR | Measures distance to surrounding objects/walls |
+| IMU | The gyro sensor inside calculates the robot's heading |
+
+Sensor data is processed by the robot's control software and used to make driving and steering decisions.
+
+### PHOTO OF SENSORS ON ROBOT ###
+
+## Computer / Controller
+
+The main computer is a **Raspberry Pi 5**, which processes sensor data and runs the robot's control software.
+
+An **Arduino Nano** is used for low-level control of the robot's steering servo and motor ESC, as well as processing IMU data to track the robot's heading.
+
+### Computer/Controller Components
+
+| Component | Function |
+|-----------|----------|
+| Raspberry Pi 5 | Main processing, computer vision, navigation and decision-making |
+| Arduino Nano | Low level commands and IMU interpretation |
+| Motor ESC | Motor control |
+| Steering Servo | Steering control |
+
+The Raspberry Pi receives information from the sensors, processes the data, and sends control commands to the Arduino, which then controls the drive and steering systems.
+
+## Battery
+
+The robot is powered by an **11.1 V 2200 mAh 3-cell LiPo battery**.
+
+| Specification | Value |
+|---------------|-------|
+| Battery Type | LiPo |
+| Cells | 3S |
+| Nominal Voltage | 11.1 V |
+| Capacity | 2200 mAh |
+| Average Current | ~3.5 A |
+| Peak Current | ~15 A |
+| Average Power | ~38 W |
+| Estimated Runtime | 40–60 minutes |
+
+The battery directly powers the drive system and provides power to the electronics through the appropriate voltage regulation.
+
+
+## How It Works
+
+The robot operates using a combination of **computer vision, LiDAR distance sensing, and autonomous control**.
+
+The **Raspberry Pi 5** collects information from the camera and LiDAR and processes this data using the robot's control software. The camera is used to identify relevant objects and course features, while the LiDAR provides distance measurements to help the robot understand its surroundings.
+
+Based on the sensor data, the software determines the appropriate **steering angle and driving speed**. Steering commands are sent to the steering servo, while drive commands are sent to the motor through the **Furitek Lizard Pro ESC**.
+
+The robot continuously repeats this process:
+
+**Sense → Process → Decide → Drive/Steer → Sense**
+
+
+
+## First design
 These are a couple pictures of the first variation of our robot
 | *Side* | *Camera Detached* |
 | :--: | :--: | 
 | <img src="./Images/first_robot_1.jpg" width="50%" height="50%" /> | <img src="./Images/first_robot_3.jpg" width="50%" height="50%" /> | 
-### Final design
+
+### Early CAD designs
+The following are photos of early iterations for the chassis and camera stand
+| *Camera Stand* | *Chassis* |
+| :--: | :--: | 
+| <img src="./Images/OG Camera stand.png" width="50%" height="50%" /> | <img src="./Images/OG Chassis.png" width="50%" height="50%" /> | 
+
+## Design Decisions
+A lot of the design decisions were based off the information and research done on previous robots from both team members and our club.
+| Challenge | Decision | Reasoning |
+|---|---|---|
+| Drive system | Furitek Micro Komodo 1212 BLDC motor with a Furitek Lizard Pro ESC | Provides enough torque and speed for the robot while remaining compact and efficient. The brushless motor also provides reliable and precise control. |
+| Size | 1/24 - 1/28 scale | A compact design makes the robot easier to maneuver, turn, and navigate through tight sections of the course while staying within the competition size limits. |
+| Battery | 11.1 V 2200 mAh 3-cell LiPo battery | Provides enough voltage for the drive system and sufficient capacity for the robot to operate throughout a run while keeping the overall weight low. |
+| Controller | Raspberry Pi 5 with an Arduino Nano | The Raspberry Pi 5 handles sensor processing, decision-making, and higher-level control, while the Arduino Nano handles real-time communication with the drive and steering systems. |
+| Sensors | D500 LiDAR, Raspberry Pi Camera, and BMI270/BMM150 IMU | LiDAR provides distance measurements for navigation and wall detection, the camera provides visual information, and the IMU provides orientation and motion data for more accurate movement and turning. |
+
+A **more detailed breakdown** of our decisions can be found in our [Engineering journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
+
+## Final design
 Here is a GIF and photos of our final design
 | *360° View* |
 | :--:|
@@ -131,6 +279,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | [Nano tape](https://www.amazon.ca/Ohayooz-Removable-Adhesive-Washable-Waterproof/dp/B0DJX3J7V6/ref=sr_1_5?dib=eyJ2IjoiMSJ9.4xs5nq5gFcHaOOpzaJjaMN0_azbULmeVyD8pNeklZcDBx1WeliPTh1GmLrq_QszISStyy2xWNMsVTvi9F2-MjdOFE1uMqWsDOs4wMZy9eCiTZcGXj-_p1O76AdoWVeJdbd9oE0J45jQPuQHyVvC5U_d3zSNre8Yo6vamYCPCTLxT3ojPra2FbWc6d77g_bmG1Mkmak3yqo0TmhIXMXnrilEh7iyucooazrCGLo7r01bNEm9QjQfJgwg0kl0sJAzUFfbutXz_a7xbWKLfesgSTevqlMMsHLOt2WqoNA0ZjUI.SWvS86ikc4qES7ofzt8WUfOumJGDljk0pQOSa4xiubs&dib_tag=se&keywords=nano%2Btape&qid=1782078372&sr=8-5&th=1) | $9.97 |
 | [3d-prints](3d-prints) | $*** |
 | [Screw Set](https://www.aliexpress.com/item/1005002438190831.html) | $22.65 |
+| [Wheels](https://www.amazon.ca/AllinRC-Pre-glued-Compatible-WLtoys-Racing/dp/B0B4DH61L9/ref=sr_1_14?crid=QZ0121YI3198&dib=eyJ2IjoiMSJ9.QJZd0ar8ehCcAtHZG2Cyl6PoyAFGZwEOcYA82wZyA45A7hnFD-N6i5WUQNJQQ5ZMctX5NR70HJd1PKE11N4uLqc-NyOsA5w7RR7l-HHHaxQfAv3DUfy4bmMrjt60gOF4PKK5zL7GlH1rZq3ozSlZntAaRzzGgRm_m6qeqB5FTlBql4sWxGOhj7D9dbpxUNwIsXUO_j2BYpu7WjhJrKYbBN4nvb0HSS0SILDtaQJuE7YjVr__sEwPc0HOAaoLpi1fSRvueEwpht6ciW26XOKRiKRQFm5EJz8l5SwWa7qmFu4.jT9UwEPv9LPwFMaTVk2SNUaIlbf-uy0nCjSzeU-9MaQ&dib_tag=se&keywords=rc%2Bcar%2Bwheels%2B1%2F28&qid=1769998887&sprefix=rc%2Bcar%2Bwheels%2B1%2F28%2Caps%2C143&sr=8-14&th=1) | $26.87 |
 | Total Price Before Tax   | $***  |
 | Total Price   | $***  |
 
