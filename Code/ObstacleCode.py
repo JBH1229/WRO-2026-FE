@@ -272,12 +272,14 @@ def recovery(side, left_area, right_area, time, old_time):
         offbalance = -MAX_OFFREAD
     else:
         offbalance = round(left_area/right_area-right_area/left_area,2)
-    if side == "right":
+    if offbalance < 0:
         send_servo(TURN_LEFT_ANGLE + RECOVERY_CORRECTION)
         exit_thresh = left_area > LEFT_EXIT_GROW_THRESH and offbalance < MAX_OFFBALANCE
+        side = "left"
     else:
         send_servo(TURN_RIGHT_ANGLE - RECOVERY_CORRECTION)
         exit_thresh = right_area > RIGHT_EXIT_GROW_THRESH and offbalance > -MAX_OFFBALANCE
+        side = "right"
     if exit_thresh:
         exit_counter = exit_counter + 1
     if exit_counter > EXIT_COUNT_THRESH:
