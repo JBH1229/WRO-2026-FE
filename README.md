@@ -105,7 +105,7 @@ Learn more about the challenges WRO has to offer and the rules accordingly [here
 | Width | 10 cm |
 | Height | 24.5 cm |
 | Wheelbase | 10.2 cm |
-| Ground Clearance | 4mm |
+| Ground Clearance | 3mm |
 | Weight | 567g |
 
 ## Drive Configuration
