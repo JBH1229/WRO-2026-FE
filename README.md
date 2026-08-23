@@ -137,7 +137,7 @@ The robot uses **servo-based steering** to control its direction.
 |-----------|---------------|
 | Steering Servo | HiTec HS-5055MG Micro Servo |
 | Control Signal | PWM |
-| Maximum Steering Angle | __° |
+| Maximum Steering Angle | 45° |
 | Steering Type | Rack & Pinion |
 
 The steering servo is connected to the front steering mechanism through a mechanical linkage connecting first to a pinion gear to drive the steering system.. The controller adjusts the servo position using PWM signals to change the robot's steering angle.
@@ -481,7 +481,7 @@ We use a RWD system for the robot which is powered by the servo motor. The servo
 | Steering Wheels | Front wheels |
 | Steering Actuator | Servo motor |
 | Steering Mechanism | Rack & Pinion |
-| Maximum Steering Angle | 135° |
+| Maximum Steering Angle | 45° |
 
 ## Electrical and Sensor Systems
 
