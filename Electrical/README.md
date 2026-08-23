@@ -3,7 +3,7 @@
 
 
 ## Schematic
-<img src="Electrical/WRO_FE_2026_circuit.png" width="700" height="700">
+<img src="/Electrical/WRO FE 2026 circuit.png" width="700" height="700">
 
 ---
 
