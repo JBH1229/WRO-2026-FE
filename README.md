@@ -538,7 +538,7 @@ The **Raspberry Pi 5** processes information from the camera and LiDAR and commu
 Arduino Nano
      |
      +----> Steering Servo
-
+```
 ## Camera
 
 The robot uses a **Raspberry Pi Camera** which excels in taking images of the surrounding environment during the competition. Images provided by the camera are analyzed by the Raspberry Pi 5, helping the robot recognize various aspects of the course.
