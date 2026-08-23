@@ -101,12 +101,12 @@ Learn more about the challenges WRO has to offer and the rules accordingly [here
 
 | Dimension | Measurement |
 |-----------|-------------|
-| Length | XX cm |
-| Width | XX cm |
-| Height | XX cm |
-| Wheelbase | XX cm |
-| Ground Clearance | XX cm |
-| Weight | XX g |
+| Length | 21 cm |
+| Width | 10 cm |
+| Height | 24.5 cm |
+| Wheelbase | 10.2 cm |
+| Ground Clearance | 4mm |
+| Weight | 567g |
 
 ## Drive Configuration
 
@@ -420,11 +420,10 @@ The chassis acts as the main structure of the robot and houses the mounting poin
 
 | Specification | Value |
 |---|---|
-| Material | [Plastic & Carbon-Fiber] |
-| Length | [___] |
-| Width | [___] |
-| Height | [___] |
-| Weight | [___] |
+| Material | Plastic & Carbon-Fiber |
+| Length | 21cm |
+| Width | 10cm |
+| Height | 22.5cm |
 
 ### Motor
 
