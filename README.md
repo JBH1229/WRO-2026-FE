@@ -513,7 +513,7 @@ The electrical system connects the battery, voltage regulators, Raspberry Pi, Ar
 
 The **Raspberry Pi 5** processes information from the camera and LiDAR and communicates control commands to the Arduino. The Arduino controls the steering servo and communicates with the drive system. The battery provides the main power source, while voltage regulation provides the appropriate voltages for the individual components.
 
-<img src="./Electrical/WRO_FE_2026_schematic_schem.png" width="90%" height="90%" />
+<img src="./Electrical/WRO FE 2026 circuit.png" width="75%" height="75%" />
 
 **Electrical System Flow:**
 
