@@ -1,5 +1,5 @@
 # WRO Future Engineers 2026
-Our repository for the 2026 World Robot Olympiad: in the category Future engineers
+Our repository for the 2026 World Robot Olympiad: in the category Future Engineers
 
 
 # Team Costco Hotdog
@@ -26,17 +26,15 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
   * [Final Design](#final-design)
 * [Prices](#price-of-the-components)
 * [Power](#power)
-* [Systems](#management)
-  * [Mechanical System](#mobility-management)
+  * [Power budget](#power-budget)
+  * [Regulator & BEC Efficiency Losses](#regulator-and-bec-efficiency-losses)
+* [Systems](#systems)
+  * [Mechanical System](#mechanical-system)
       * [Motor](#motor)
       * [Servo Motor](#servo-motor)
       * [Wheels](#wheels)
-  * [Electrical & Sensor System](#power-and-sense-management)
-    * [Battery](#battery)
-    * [Raspi Camera](#camera)
-    * [LiDAR](#lidar)
-    * [Raspberry Pi 5](#pi)
-    * [Regulator](#regulator)
+  * [Electrical & Sensor System](#electrical-and-sensor-system)
+    * [Regulator](#voltage-regulation)
     * [Circuit Diagram](#circuit-diagram)
 * [Software](#software)
 * [Testing](#testing)
@@ -46,13 +44,14 @@ Our repository for the 2026 World Robot Olympiad: in the category Future enginee
     * [Obstacle Challenge](#OBCV)
 * [Future Potential Improvements](#potential-improvements)
 
+
 # Team Members
 
 ### Jonathan Huang
 **Age:** 15
 
 **Introduction:**
-Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am interested in airplanes, and enjoy learning about how they work in my free time. besides that, I enjoy playing video games with my friends. I am currently attending Notre Dame CSS.
+Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am interested in airplanes, and enjoy learning about how they work in my free time. Besides that, I enjoy playing video games with my friends. I am currently attending Notre Dame CSS.
 
 
 
@@ -60,7 +59,7 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 **Age:** 15
 
 **Introduction:**
-Hi, my name is Walter and I'm also from Canada, this is my third WRO season,  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
+Hi, my name is Walter and I'm also from Canada, this is my third WRO season;  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
 
 # Our Coach
 <table>
@@ -90,12 +89,12 @@ The **Open Challenge** tests our robot's ability to drive autonomously around th
 
 ### Obstacle Challenge
 
-The **Obstacle Challenge** adds red and green traffic signs to the track as well as a parking area. Teams have a option to start and end within the parking area to accumulate more points. While completing three laps, the robot must identify the traffic signs and choose the correct side of the lane to pass on. After finishing the laps, the robot will optionally find the parking area and successfully perform a parallel park.
+The **Obstacle Challenge** adds red and green traffic signs to the track as well as a parking area. Teams have an option to start and end within the parking area to accumulate more points. While completing three laps, the robot must identify the traffic signs and choose the correct side of the lane to pass on. After finishing the laps, the robot will optionally find the parking area and successfully parallel park.
 ### Documentation
 
 The **Documentation** focuses on explaining how our robot was designed and developed. Our GitHub repository includes information about the robot's hardware, software, sensors, power system, and driving strategies. It also contains photos, videos, source code, and updates showing our engineering process and improvements throughout the project.
 
-Learn more about the challenges WRO has to offer and the rules in accordance [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
+Learn more about the challenges WRO has to offer and the rules accordingly [here](https://wro-association.org/competition/2026-season/) and [here](https://wro-association.org/competition/2026-season/)
 
 # Robot
 ## Overview
@@ -123,7 +122,7 @@ The robot uses a **RWD** drivetrain powered by a **Furitek Micro Komodo 1212 bru
 | Drive Type | RWD |
 | Driven Wheels | 1/28 RC drift car wheels |
 
-The motor receives speed commands from the control system through the ESC which decodes PWM messages from Pi. The drivetrain converts the motor's rotation into forward and reverse movement.
+The motor receives speed commands from the control system through the ESC which decodes PWM messages from the Pi. The drivetrain converts the motor's rotation into forward and reverse movement.
 
 ### DRIVE TRAIN PHOTO ###
 
@@ -136,12 +135,12 @@ The robot uses **servo-based steering** to control its direction.
 
 | Component | Specification |
 |-----------|---------------|
-| Steering Servo | HS-5055MG Micro Servo |
+| Steering Servo | HiTec HS-5055MG Micro Servo |
 | Control Signal | PWM |
 | Maximum Steering Angle | __° |
 | Steering Type | Rack & Pinion |
 
-The steering servo is connected to the front steering mechanism through a mechanical linkage with it first connecting to a pinion gear and driving a gear system. The controller adjusts the servo position using PWM signals to change the robot's steering angle.
+The steering servo is connected to the front steering mechanism through a mechanical linkage connecting first to a pinion gear to drive the steering system.. The controller adjusts the servo position using PWM signals to change the robot's steering angle.
 
 ### STEERING DIAGRAM PHOTO ###
 
@@ -237,7 +236,7 @@ The following are photos of early iterations for the chassis and camera stand
 | <img src="./Images/OG Camera stand.png" width="50%" height="50%" /> | <img src="./Images/OG Chassis.png" width="50%" height="50%" /> | 
 
 ## Design Decisions
-A lot of the design decisions were based off the information and research done on previous robots from both team members and our club.
+A lot of the design decisions were based on the information and research done on previous robots from both team members and our club.
 | Challenge | Decision | Reasoning |
 |---|---|---|
 | Drive system | Furitek Micro Komodo 1212 BLDC motor with a Furitek Lizard Pro ESC | Provides enough torque and speed for the robot while remaining compact and efficient. The brushless motor also provides reliable and precise control. |
@@ -246,9 +245,9 @@ A lot of the design decisions were based off the information and research done o
 | Controller | Raspberry Pi 5 with an Arduino Nano | The Raspberry Pi 5 handles sensor processing, decision-making, and higher-level control, while the Arduino Nano handles real-time communication with the drive and steering systems. |
 | Sensors | D500 LiDAR, Raspberry Pi Camera, and BMI270/BMM150 IMU | LiDAR provides distance measurements for navigation and wall detection, the camera provides visual information, and the IMU provides orientation and motion data for more accurate movement and turning. |
 
-A **more detailed breakdown** of our decisions can be found in our [Engineering journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
+A **more detailed breakdown** of our decisions can be found in our [Engineering Journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
 
-## Final design
+## Final Design
 Here is a GIF and photos of our final design
 | *360° View* |
 | :--:|
@@ -284,7 +283,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | Total Price Before Tax   | $***  |
 | Total Price   | $***  |
 
-***The additions to the RASPI 5 include but are not limited to USB-C PD Power Supply, Raspi Active Cooler, and a Micro-HDMI to HDMI cable***
+***The additions to the RASPI 5 include but are not limited to USB-C PD Power Supply, Raspberry Pi Active Cooler, and a Micro-HDMI to HDMI cable***
 
 # Power
 
@@ -296,7 +295,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | Pi Camera | 5.0 | 0.25 | 1.25 | 5V Regulated Rail |
 | Arduino Nano | 5.0 | 0.03 | 0.15 | 5V Regulated Rail |
 | D500 LiDAR | 5.0 | 0.20 | 1.00 | 5V Regulated Rail |
-| HS-5055MG Servo | 6.0 | 0.15 | 0.90 | 6V BEC Rail |
+| HiTec HS-5055MG Servo | 6.0 | 0.15 | 0.90 | 6V BEC Rail |
 | Furitek ESC Electronics | 6.0 | 0.05 | 0.30 | 6V BEC Rail |
 | Furitek Micro Komodo 1212 Motor | 11.1 | 2.00 | 22.20 | 11.1V Direct Rail |
 | **Total Device Power** | | | **34.80 W** | |
@@ -318,7 +317,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 
 ---
 
-## Regulator & BEC Efficiency Losses
+## Regulator and BEC Efficiency Losses
 
 * **5V Regulated Rail (Yahboom Power Board @ 92% Efficiency):**
 
@@ -389,7 +388,7 @@ The Zeee LiPo battery can comfortably supply peak loads well within thermal safe
 * **Average Power:** `22.20 W`
 
 ### 6V BEC Rail (Integrated ESC BEC @ 85% Efficiency)
-* **Connected Components:** HS-5055MG Servo & ESC Electronics
+* **Connected Components:** HiTec HS-5055MG Servo & ESC Electronics
 * **Average Current:** $0.15\text{ A} + 0.05\text{ A} = 0.20\text{ A}$
 * **Peak Current:** $0.70\text{ A} + 0.10\text{ A} \approx 0.80\text{ A}$
 * **Average Power:** $6.0\text{ V} \times 0.20\text{ A} = 1.20\text{ W}$
@@ -408,7 +407,182 @@ The Zeee LiPo battery can comfortably supply peak loads well within thermal safe
 The robot’s power source is an 11.1V, 2200mAh, 3-cell LiPo battery. The drive unit includes a Furitek Micro Komodo BLDC motor and Furitek Lizard Pro controller. A 5V power supply is used for powering the Raspberry Pi 5, LiDAR sensor, camera, and Arduino Nano. The average total battery power consumption of the robot is 36.0 W, which includes the Raspberry Pi 5 (9.0 W), camera (1.25 W), LiDAR sensor (1.0 W), steering servo (0.9 W), Arduino Nano (0.15 W), Furitek electronics and brushless drive system (22.5 W), and conversion losses (1.20 W). The average current consumption from the battery is approximately 3.24 A, which provides an estimated continuous full-speed runtime of about 40 minutes (and 50–60 minutes under typical WRO run conditions). The estimated maximum peak current demand during acceleration or stall is 12–16 A.
 
 
+# Systems
+## Mechanical System
+
+The mechanical system forms the basis for the framework, motion, and steering of the robot. This is made up of the chassis, drive motor, servo motor, wheels, and steering. Each part has been chosen and placed precisely to ensure stability, maneuverability, durability, and space.
+
+### Chassis
+
+The chassis acts as the main structure of the robot and houses the mounting points for the drive systems, steering systems, battery, electronics, and sensors. The chassis design is done in such a way that the robot remains small yet has room for all the parts while remaining lightweight. The mounting of the components ensures that they remain stable.
+
+**Chassis Specifications:**
+
+| Specification | Value |
+|---|---|
+| Material | [Plastic & Carbon-Fiber] |
+| Length | [___] |
+| Width | [___] |
+| Height | [___] |
+| Weight | [___] |
+
+### Motor
+
+The robot incorporates a **Furitek Micro Komodo 1212 brushless DC motor** for its drive system. The motor is controlled through the use of a **Furitek Lizard Pro ESC**, which controls the amount of energy being supplied to the motor. The motor supplies the energy needed to rotate the wheels and was chosen due to its speed and torque.
+
+**Motor Specifications:**
+
+| Specification | Value |
+|---|---|
+| Motor | Furitek Micro Komodo 1212 |
+| Type | Brushless DC (BLDC) |
+| Operating Voltage | 11.1 V |
+| Average Current | 2.0 A |
+| Average Power | 22.2 W |
+| ESC | Furitek Lizard Pro |
+
+### Servo Motor
+
+The steering of the robot is controlled by the servo motor. The servo motor will receive the signals from the Arduino for the steering and turn to the appropriate position. This movement is transmitted through the steering linkage to adjust the front wheels' angles. The servo was chosen because it provided the necessary torque and fit in the restricted space of the robot.
+
+**Servo Specifications:**
+
+| Specification | Value |
+|---|---|
+| Servo Model | [HiTec HS-5055MG Micro Servo] |
+| Operating Voltage | [4.8-6.0V] |
+| Torque | [18.05-22.2 oz-in] |
+| Steering Range | [~80°] |
+| Average Power | 3.0 W |
+
+### Wheels
+
+Wheels are used in the design to give traction and stability during movement. The wheels are mechanically linked with the drivetrain system in order to transmit power from the drive motor to the wheels. The size and tread pattern of the wheels have been chosen keeping in mind the traction and stability requirements.
+
+**Wheel Specifications:**
+
+| Specification | Value |
+|---|---|
+| Number of Wheels | 4 |
+| Wheel Diameter | ~30mm |
+| Wheel Width | 12mm |
+| Material | Aluminum Alloy |
+| Tread Type | Slick/Smooth Tread |
+
+### Steering
+
+We use a RWD system for the robot which is powered by the servo motor. The servo causes the steering linkage to change the angle at which the front wheels point, and hence steer the robot. The steering system has been engineered to have accurate steering control and minimal movement or sloppiness of the linkage.
+
+**Steering Configuration:**
+
+| Specification | Value |
+|---|---|
+| Steering Type | Power-assisted |
+| Steering Wheels | Front wheels |
+| Steering Actuator | Servo motor |
+| Steering Mechanism | Rack & Pinion |
+| Maximum Steering Angle | 135° |
+
+## Electrical and Sensor Systems
+
+The electrical and sensor systems are responsible for providing power, sensing, and communication between different parts of the robot. The system includes a 11.1 V lithium polymer battery, the Raspberry Pi 5, the Arduino Nano, a Raspi camera, the LiDAR, and the electronics related to driving and steering of the robot. All these parts interact with each other to sense the environment for the robot.
+
+*You can refer back to our [Power section](#power) for the detailed specifications on the battery and power budget.*
+
+### Voltage Regulation
+
+The battery provides a nominal voltage of **11.1 V**, while several components require lower operating voltages. Voltage regulators are therefore used to provide stable power to the electronics.
+
+A regulated **5 V supply** powers the Raspberry Pi 5, Pi Camera, Arduino Nano, and D500 LiDAR. The steering servo and ESC electronics operate from an appropriate regulated supply. Voltage regulation protects the electronics from unsuitable voltage levels and helps maintain stable operation throughout the robot's run.
+
+**Voltage Distribution:**
+
+| Component | Required Voltage | Power Source |
+|---|---:|---|
+| Raspberry Pi 5 | 5.0 V | Voltage Regulator |
+| Pi Camera | 5.0 V | 5 V Supply |
+| Arduino Nano | 5.0 V | 5 V Supply |
+| D500 LiDAR | 5.0 V | 5 V Supply |
+| Servo Motor | 6.0 V | Regulated Supply |
+| ESC | 6.0 V | Regulated Supply |
+| Drive Motor | 11.1 V | Battery |
+
+### Circuit Diagram 
+
+The electrical system connects the battery, voltage regulators, Raspberry Pi, Arduino, sensors, ESC, servo, and drive motor.
+
+The **Raspberry Pi 5** processes information from the camera and LiDAR and communicates control commands to the Arduino. The Arduino controls the steering servo and communicates with the drive system. The battery provides the main power source, while voltage regulation provides the appropriate voltages for the individual components.
+
+<img src="./Electrical/WRO_FE_2026_schematic_schem.png" width="90%" height="90%" />
+
+**Electrical System Flow:**
+
+```text
+                    11.1 V LiPo Battery
+                            |
+             +--------------+--------------+
+             |                             |
+             v                             v
+       Voltage Regulators             Lizard Pro ESC
+             |                             |
+      +------+------+                      v
+      |      |      |                Micro Komodo
+      |      |      |                    Motor
+      v      v      v
+ Raspberry Arduino  D500
+   Pi 5     Nano   LiDAR
+     |
+     v
+ Pi Camera
+
+Arduino Nano
+     |
+     +----> Steering Servo
+
+## Camera
+
+The robot uses a **Raspberry Pi Camera** which excels in taking images of the surrounding environment during the competition. Images provided by the camera are analyzed by the Raspberry Pi 5, helping the robot recognize various aspects of the course.
+
+The camera is mounted on the Raspberry Pi so that it gives a good picture of the space in front of the robot including the side walls. The images taken by the camera are processed using computer vision algorithms before being used for navigation.
+
+### Camera Specifications
+
+| Specification | Value |
+|---|---|
+| Camera | Raspberry Pi Camera |
+| Interface | 15-pin MIPI CSI |
+| Resolution | 1080p @ 30fps / 720p @ 60fps |
+| Field of View | 175° |
+| Purpose | Computer Vision / Navigation |
+
+## LiDAR
+
+The robot uses a **D500 LiDAR sensor** for parking only. The LiDAR provides distance measurements that allow the Raspberry Pi to determine the robot's position relative to the parking walls and outside walls.
+
+LiDAR data is processed by the Raspberry Pi and used by the navigation system to maintain the desired distance from walls and detect changes in the robot's surroundings.
+
+### LiDAR Specifications
+
+| Specification | Value |
+|---|---|
+| Sensor | D500 LiDAR |
+| Connection | 4-pin JST |
+| Operating Voltage | 5.0 V |
+| Average Current | 0.20 A |
+| Average Power | 1.00 W |
+| Primary Purpose | Distance Measurement |
+
+## Sensor Placement
+
+The placement of the camera and LiDAR was designed while keeping in mind not to block anything from the front and sides of their FOV.
+
+The **camera** is positioned to provide a clear lifted forward-facing view of the course. The **LiDAR** is positioned so that it can measure the distance between the robot and surrounding walls or obstacles. The sensors are mounted securely to prevent movement and maintain consistent measurements during operation.
+
+### PICTURE OF SENSORS ON ROBOT ###
+
+
 # Software
+
 # Autonomous Robot State Machine Documentation
 
 ## 1. ASCII State Machine Diagram
