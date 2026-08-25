@@ -33,7 +33,7 @@ Our repository for the 2026 World Robot Olympiad: in the category Future Enginee
       * [Motor](#motor)
       * [Servo Motor](#servo-motor)
       * [Wheels](#wheels)
-  * [Electrical & Sensor System](#electrical-and-sensor-system)
+  * [Electrical & Sensor System](#electrical-and-sensor-systems)
     * [Regulator](#voltage-regulation)
     * [Circuit Diagram](#circuit-diagram)
 * [Software](#software)
@@ -43,7 +43,6 @@ Our repository for the 2026 World Robot Olympiad: in the category Future Enginee
     * [Open challenge](#OPCV)
     * [Obstacle Challenge](#OBCV)
 * [Future Potential Improvements](#potential-improvements)
-
 
 # Team Members
 
