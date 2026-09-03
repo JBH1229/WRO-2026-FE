@@ -241,18 +241,15 @@ A lot of the design decisions were based on the information and research done on
 A **more detailed breakdown** of our decisions can be found in our [Engineering Journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
 
 ## Final Design
-Here is a GIF and photos of our final design
-| *360° View* |
-| :--:|
-| *####MISSING####* |
+Here are photos of our final design|
 
 | *Front* | *Back* |
 | :--: | :--: |
-| <img src="./images/robotfront.jpg" width="50%" height="50%" /> | <img src="./images/robotback.jpg" width="50%" height="50%" /> | 
+| <img src="./Images/robot_front.jpg" width="50%" height="50%" /> | <img src="./Images/robot_back.jpg" width="50%" height="50%" /> | 
 | *Left* | *Right* |
-| <img src="./images/robotleft.jpg" width="50%" height="50%" /> | <img src="./images/robotright.jpg" width="50%" height="50%" /> | 
+| <img src="./Images/robot_left.jpg" width="50%" height="50%" /> | <img src="./Images/robot_right.jpg" width="50%" height="50%" /> | 
 | *Top* | *Bottom* |
-| <img src="./images/robottop.jpg" width="50%" height="50%" /> | <img src="./images/robotbottom.jpg" width="50%" height="50%" /> | 
+| <img src="./Images/Robot_top.jpg" width="50%" height="50%" /> | <img src="./Images/robot_bottom.jpg" width="50%" height="50%" /> | 
 
 Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main differences between the first and final renditions of our robot
 
