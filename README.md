@@ -121,9 +121,6 @@ The robot uses a **RWD** drivetrain powered by a **Furitek Micro Komodo 1212 bru
 
 The motor receives speed commands from the control system through the ESC which decodes PWM messages from the Pi. The drivetrain converts the motor's rotation into forward and reverse movement.
 
-### DRIVE TRAIN PHOTO ###
-
-
 ## Steering Configuration
 
 The robot uses **servo-based steering** to control its direction.
@@ -139,7 +136,6 @@ The robot uses **servo-based steering** to control its direction.
 
 The steering servo is connected to the front steering mechanism through a mechanical linkage connecting first to a ball joint to drive the steering system.. The controller adjusts the servo position using PWM signals to change the robot's steering angle.
 
-### STEERING DIAGRAM PHOTO ###
 
 ## Main Components
 
