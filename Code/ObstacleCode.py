@@ -74,6 +74,8 @@ arduino.write_timeout = 1.0
 time.sleep(2.0)
 # Clear anything the Arduino might have printed during boot
 servo_value = 82
+default_servo_value = 82
+default_motor_value = 1500
 motor_value = 1500
 #set default values
 arduino.reset_input_buffer()
@@ -88,10 +90,9 @@ imu_heading = 0.0
 starting_heading = 0.0
 relative_heading = 0.0
 first_read = True
-end_run = False
+end_run_count = False
 end_run_counter = 0
 END_RUN_LIMIT = 30
-TURN_LIMIT = 12
 TOGGLE_GYRO_TURN = False
 GYRO_TURN_VAL = 15
 relative_turn_heading = 0.0
@@ -120,6 +121,13 @@ NORMAL_RECOVERY = 1
 HEAVY_RECOVERY = 2
 recovery_override = False
 recovery_type = NORMAL_RECOVERY
+start_run = True
+end_run = False
+start_step = 1
+end_step = 1
+LEFT = 1
+RIGHT = 2
+orientation = 0
 #@log
 def send_servo(value):
 	global servo_value
@@ -147,7 +155,7 @@ def send_motor(value):
 def send_servo_assigned(value): 
 	global servo_value
 	value = int(value)
-	value = 82 + value
+	value = default_servo_value + value
 	if value < 0:
 		value = 0
 	if value > 180:
@@ -159,7 +167,7 @@ def send_servo_assigned(value):
 def send_motor_assigned(value):
 	global motor_value
 	value = int(value)
-	value = 1500 + value
+	value = default_motor_value + value
 	if value < 1000:
 		value = 1000
 	if value > 2000:
@@ -300,6 +308,8 @@ TURN_RIGHT_ANGLE  = 107 # change higher if nessassary avg 81 82+15 71
 RECOVERY_CORRECTION = -10 # reduces the turn rate by this much when recovering
 PILLAR_MAX_TURN_RATE = 40
 MAX_TURN_RATE = 40
+MAX_TURN_LEFT = default_servo_value - MAX_TURN_RATE
+MAX_TURN_RIGHT = default_servo_value + MAX_TURN_RATE
 # --- Anti-false-trigger improvement ---
 # Require the enter condition to be true for N consecutive frames
 ENTER_CONFIRM_FRAMES = 5
@@ -314,10 +324,14 @@ if not DebugMode:
 	WALL_FOLLOW_MOTOR_VALUE = 1620
 	CORNER_TURN_MOTOR_VALUE = 1620
 	PILLAR_AVOID_SPEED = 1620
+	PARKING_SPEED_FORWARD = 1550
+	PARKING_SPEED_BACKWARD = 1450
 else:
 	WALL_FOLLOW_MOTOR_VALUE = 1500
 	CORNER_TURN_MOTOR_VALUE = 1500
 	PILLAR_AVOID_SPEED = 1500
+	PARKING_SPEED_FORWARD = 1500
+	PARKING_SPEED_BACKWARD = 1500
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_thresh_time = None
 turn_trigger_side = None     # "left", "right", or "both"
@@ -475,8 +489,6 @@ last_time = time.monotonic()
 #start moving (motor start)
 print("waiting for button press...")
 button.wait_for_press()
-send_motor(1550)
-sleep(0.5)
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
 try:
 	while True:
@@ -486,80 +498,79 @@ try:
 		if ser.in_waiting > 0:
 			ser.reset_input_buffer()
 		if abs(relative_heading) > 1040:
-			end_run = True
-		if end_run == True:
+			end_run_count = True
+		if end_run_count == True:
 			end_run_counter += 1
 		if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1070:
-			send_servo(82)
-			send_motor(1500)
-			break 
+			send_servo(default_servo_value)
+			send_motor(default_motor_value)
+			end_run = True
+		frame = picam2.capture_array()  # RGB image
+		roiPillar = (0, 100, 640, 400)
+		pillar_crop = frame[roiPillar[1]:roiPillar[1]+roiPillar[3], roiPillar[0]:roiPillar[0]+roiPillar[2]]
+		hsv_frame = cv2.cvtColor(pillar_crop, cv2.COLOR_RGB2HSV)
+		lower_red = np.array([115, 150, 70]) # [115, 150, 70]
+		upper_red = np.array([150, 255, 255]) #[150, 255, 255]
+		mask_red = cv2.inRange(hsv_frame, lower_red, upper_red)
+		lower_green = np.array([30, 120, 0]) # [30, 120, 0]
+		upper_green = np.array([55, 255, 255]) # [70, 255, 255]
+		mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
+		red_cx, red_cy, red_area, red_contour = best_pillar(mask_red)
+		green_cx, green_cy, green_area, green_contour = best_pillar(mask_green)
+		if red_area > green_area and red_area > MIN_REACT_AREA:
+			active_color = "red"
+			active_cx = red_cx
+			active_cy = red_cy
+		elif green_area > MIN_REACT_AREA:
+			active_color = "green"
+			active_cx = green_cx
+			active_cy = green_cy
 		else:
-			frame = picam2.capture_array()  # RGB image
-			roiPillar = (0, 100, 640, 400)
-			pillar_crop = frame[roiPillar[1]:roiPillar[1]+roiPillar[3], roiPillar[0]:roiPillar[0]+roiPillar[2]]
-			hsv_frame = cv2.cvtColor(pillar_crop, cv2.COLOR_RGB2HSV)
-			lower_red = np.array([115, 150, 70]) # [115, 150, 70]
-			upper_red = np.array([150, 255, 255]) #[150, 255, 255]
-			mask_red = cv2.inRange(hsv_frame, lower_red, upper_red)
-			lower_green = np.array([30, 120, 0]) # [30, 120, 0]
-			upper_green = np.array([55, 255, 255]) # [70, 255, 255]
-			mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
-			red_cx, red_cy, red_area, red_contour = best_pillar(mask_red)
-			green_cx, green_cy, green_area, green_contour = best_pillar(mask_green)
-			if red_area > green_area and red_area > MIN_REACT_AREA:
-				active_color = "red"
-				active_cx = red_cx
-				active_cy = red_cy
-			elif green_area > MIN_REACT_AREA:
-				active_color = "green"
-				active_cx = green_cx
-				active_cy = green_cy
-			else:
-				active_color = None
+			active_color = None
+		unread_packets = ser.in_waiting > 0
+		while unread_packets:
+			data = ser.read(256)
 			unread_packets = ser.in_waiting > 0
-			while unread_packets:
-				data = ser.read(256)
-				unread_packets = ser.in_waiting > 0
-				packets_read += 1
-				if packets_read > max_packets:
-					packets_read = 0
-					ser.reset_input_buffer()
-					break
-				if data:
-					buffer += data
-					while True:
-						idx = find_packet_start(buffer)
-						idx = find_packet_start(buffer)
-						if idx == -1 or len(buffer) - idx < PACKET_LEN:
-							break
-						packet = buffer[idx:idx+PACKET_LEN]
-						buffer = buffer[idx+PACKET_LEN:]
-						parsed = parse_packet(packet)
-						if parsed:
-							angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
-							#print(f"\nSpeed: {parsed['speed']:.2f} RPM | Timestamp: {parsed['timestamp']} ms")
-							for i, ((dist, conf), angle) in enumerate(zip(parsed["points"], angles)):
-								if abs(angle - 0.0) < 0.3: 
-									d_0 = [0, dist, conf]
-									deg_0 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-								if abs(angle - (360-45.0)) < 0.3:
-									d_45 = [45, dist, conf]
-									deg_45 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-								if abs(angle - (360-90.0)) < 0.3: 
-									d_90 = [90, dist, conf]
-									deg_90 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-								if abs(angle - (360-135.0)) < 0.3:
-									d_135 = [135, dist, conf]
-									deg_135 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-								if abs(angle - (360-180.0)) < 0.3:
-									d_180 = [180, dist, conf]
-									deg_180 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-							#print(deg_0, "\n", deg_45, "\n", deg_90, "\n", deg_135, "\n", deg_180, "\n")
-						else:
-							print("Invalid packet")
-							
-			#print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])
-			print(f"""time_good: {time_good} 
+			packets_read += 1
+			if packets_read > max_packets:
+				packets_read = 0
+				ser.reset_input_buffer()
+				break
+			if data:
+				buffer += data
+				while True:
+					idx = find_packet_start(buffer)
+					idx = find_packet_start(buffer)
+					if idx == -1 or len(buffer) - idx < PACKET_LEN:
+						break
+					packet = buffer[idx:idx+PACKET_LEN]
+					buffer = buffer[idx+PACKET_LEN:]
+					parsed = parse_packet(packet)
+					if parsed:
+						angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
+						#print(f"\nSpeed: {parsed['speed']:.2f} RPM | Timestamp: {parsed['timestamp']} ms")
+						for i, ((dist, conf), angle) in enumerate(zip(parsed["points"], angles)):
+							if abs(angle - 0.0) < 0.3: 
+								d_0 = [0, dist, conf]
+								deg_0 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+							if abs(angle - (360-45.0)) < 0.3:
+								d_45 = [45, dist, conf]
+								deg_45 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+							if abs(angle - (360-90.0)) < 0.3: 
+								d_90 = [90, dist, conf]
+								deg_90 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+							if abs(angle - (360-135.0)) < 0.3:
+								d_135 = [135, dist, conf]
+								deg_135 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+							if abs(angle - (360-180.0)) < 0.3:
+								d_180 = [180, dist, conf]
+								deg_180 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+						#print(deg_0, "\n", deg_45, "\n", deg_90, "\n", deg_135, "\n", deg_180, "\n")
+					else:
+						print("Invalid packet")
+						
+		#print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])
+		print(f"""time_good: {time_good} 
 time_out: {time_out} 
 side_ok: {side_ok} 
 exit_thresh: {exit_thresh} 
@@ -568,43 +579,132 @@ exit_to_corner = {(time_out or side_ok) and time_good}
 lock = {locked} 
 unlock = {unlock_condition} 
 recovery_override = {recovery_override}""")
-			#Periodically request IMU heading from arduino
-			if time.time()-last_heading_time >= HEADING_INTERVAL:
-				get_heading()
-				last_heading_time = time.time()
-				time.sleep(0.02)
-				if arduino.in_waiting > 0:
-					try:
-						raw = arduino.read(arduino.in_waiting).decode('utf-8', errors='ignore')
-						for line in raw.splitlines():
-							line = line.strip()
-							if not line:
-								continue
-							try:
-								imu_heading = float(line)
-								if first_read == True:
-									starting_heading = imu_heading
-									time.sleep(0.02)
-									first_read = False
-								relative_heading = round(imu_heading - starting_heading, 2)
-							except ValueError:
-								pass
-					except Exception:
-						pass
-			leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
-			rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
-			if abs(relative_heading) > abs(highest_heading):
-				highest_heading = relative_heading
-			if lap_direction is None:
-				if highest_heading > lap_margin:
-					lap_direction = "CW"
-					outer_wall = "left"
-					inner_wall = "right"
-				elif highest_heading < -lap_margin:
-					lap_direction = "CCW"
-					outer_wall = "right"
-					inner_wall = "left"
-			now = time.monotonic()
+		#Periodically request IMU heading from arduino
+		if time.time()-last_heading_time >= HEADING_INTERVAL:
+			get_heading()
+			last_heading_time = time.time()
+			time.sleep(0.02)
+			if arduino.in_waiting > 0:
+				try:
+					raw = arduino.read(arduino.in_waiting).decode('utf-8', errors='ignore')
+					for line in raw.splitlines():
+						line = line.strip()
+						if not line:
+							continue
+						try:
+							imu_heading = float(line)
+							if first_read == True:
+								starting_heading = imu_heading
+								time.sleep(0.02)
+								first_read = False
+							relative_heading = round(imu_heading - starting_heading, 2)
+						except ValueError:
+							pass
+				except Exception:
+					pass
+		leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
+		rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
+		if abs(relative_heading) > abs(highest_heading):
+			highest_heading = relative_heading
+		if lap_direction is None:
+			if highest_heading > lap_margin:
+				lap_direction = "CW"
+				outer_wall = "left"
+				inner_wall = "right"
+			elif highest_heading < -lap_margin:
+				lap_direction = "CCW"
+				outer_wall = "right"
+				inner_wall = "left"
+		now = time.monotonic()
+		if start_run or end_run:
+			if start_run:
+				if (d_0 == []) or (d_180 == []):
+					continue
+				if orientation == 0:
+					if d_0[1] > d_180[1]:
+						orientation = LEFT
+						#180 degrees is closer robot is facing left (CW)
+					else:
+						orientation = RIGHT
+						#0 degrees is closer robot is facing right (CCW)
+				if orientation == RIGHT:
+					if start_step == 1:
+						send_servo(MAX_TURN_LEFT)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_FORWARD)
+						start_step = 2
+					elif start_step == 2:
+						if relative_heading > -20:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 3
+					elif start_step == 3:
+						send_servo(MAX_TURN_RIGHT)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_BACKWARD)
+						start_step = 4
+					elif start_step == 4:
+						if relative_heading > -40:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 5
+					elif start_step == 5:
+						send_servo(default_servo_value - 10)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_FORWARD)
+						start_step = 6
+					elif start_step == 6:
+						if relative_heading > -50:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 7
+					elif start_step == 7:
+						start_run = False
+						continue
+				else:
+					if start_step == 1:
+						send_servo(MAX_TURN_RIGHT)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_FORWARD)
+						start_step = 2
+					elif start_step == 2:
+						if relative_heading > 20:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 3
+					elif start_step == 3:
+						send_servo(MAX_TURN_LEFT)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_BACKWARD)
+						start_step = 4
+					elif start_step == 4:
+						if relative_heading > 40:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 5
+					elif start_step == 5:
+						send_servo(default_servo_value + 10)
+						sleep(0.5)
+						send_motor(PARKING_SPEED_FORWARD)
+						start_step = 6
+					elif start_step == 6:
+						if relative_heading > 50:
+							continue
+						else:
+							send_motor(default_motor_value)
+							start_step = 7
+					elif start_step == 7:
+						start_run = False
+						continue
+			else:
+				#parallel parking code
+				break
+		else:
 			# -------------------------
 			# MODE / STATE MACHINE
 			# -------------------------
@@ -751,7 +851,7 @@ recovery_override = {recovery_override}""")
 						recovery_type = NORMAL_RECOVERY
 					if (lap_direction == "CW") and prev_red and (pillar_location == "right"):
 						# CW RED RIGHT = LIGHT RECOVERY
-					   recovery_type = LIGHT_RECOVERY
+						recovery_type = LIGHT_RECOVERY
 					if (lap_direction == "CW") and not prev_red and (pillar_location == "left"):
 						# CW GREEN LEFT = HEAVY RECOVERY
 						recovery_type = HEAVY_RECOVERY
@@ -1054,16 +1154,11 @@ recovery_override = {recovery_override}""")
 						(10, 185), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
 				#print(f"Off Balance: {offbalance} Larger Side = {larger_side}")
 			cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
-
-			# Optional: show masks for tuning thresholds
-			# cv2.imshow("Left ROI Mask", leftMask)
-			# cv2.imshow("Right ROI Mask", rightMask)
-
-			if cv2.waitKey(1) & 0xFF == ord('q'):
-				break
+		if cv2.waitKey(1) & 0xFF == ord('q'):
+			break
 finally:
-	send_motor(1500)  # stop motor
-	send_servo(82)    # center steering
+	send_motor(default_motor_value)  # stop motor
+	send_servo(default_servo_value)    # center steering
 	cv2.destroyAllWindows()
 	picam2.stop()
 	arduino.close()
