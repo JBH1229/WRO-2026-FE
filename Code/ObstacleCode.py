@@ -1,3 +1,6 @@
+DebugMode = False
+ColorBias = True
+PositionRequired = True
 import cv2
 import numpy as np
 from picamera2 import Picamera2
@@ -104,6 +107,19 @@ recovery_mode = False
 distance_error = 1
 offbalance = 0
 MAX_OFFREAD = 1000
+highest_heading = 0
+lap_direction = None
+lap_margin = 30
+target_cx = 0
+prev_red = False
+outer_wall = None
+inner_wall = None
+pillar_location = None
+LIGHT_RECOVERY = 0
+NORMAL_RECOVERY = 1
+HEAVY_RECOVERY = 2
+recovery_override = False
+recovery_type = NORMAL_RECOVERY
 #@log
 def send_servo(value):
     global servo_value
@@ -193,7 +209,13 @@ lap_count = 0
 # --- ROIs (x1, y1, x2, y2) ---
 ROI1 = [0, 200, 240, 300]     # Left ROI [0, 230, 240, 300] 
 ROI2 = [400, 200, 640, 300]    # Right ROI [400, 230, 640, 300]  
-
+middle_divisor_line = [320, 100, 320, 640]
+middle_divisor = 320
+left_bias = 120
+left_bias_line = [left_bias, 100, left_bias, 640]
+right_bias = 520
+right_bias_line = [right_bias, 100, right_bias, 640]
+extra_divisor = 0
 def draw_roi(img, roi, color=(0, 255, 255), thickness=2, label=None):
     x1, y1, x2, y2 = roi
     cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
@@ -250,20 +272,6 @@ def best_pillar(mask):
             continue
         if cy <= MIN_PILLAR_Y:
             continue
-        if h < 40:
-            continue
-        aspect_ratio = h / w
-        if aspect_ratio < 1.25:
-            continue
-        if w < 15:
-            continue
-        hull = cv2.convexHull(cnt)
-        hull_area = cv2.contourArea(hull)
-        if hull_area == 0:
-            continue
-        solidity = area / hull_area
-        if solidity < 0.75:
-            continue
         if area > best_area:
             best_area = area
             best = cnt
@@ -302,29 +310,41 @@ MODE_CORNER_TURN = "CORNER_TURN"
 MODE_PILLAR_AVOID = "PILLAR_AVOID"
 prev_mode = ""
 mode = MODE_WALL_FOLLOW
-WALL_FOLLOW_MOTOR_VALUE = 1622
-CORNER_TURN_MOTOR_VALUE = 1622
-PILLAR_AVOID_SPEED = 1622
+if not DebugMode:
+    WALL_FOLLOW_MOTOR_VALUE = 1620
+    CORNER_TURN_MOTOR_VALUE = 1620
+    PILLAR_AVOID_SPEED = 1620
+else:
+    WALL_FOLLOW_MOTOR_VALUE = 1500
+    CORNER_TURN_MOTOR_VALUE = 1500
+    PILLAR_AVOID_SPEED = 1500
 turn_enter_time = None       # monotonic time when we entered corner-turning mode
 turn_thresh_time = None
 turn_trigger_side = None     # "left", "right", or "both"
 enter_counter = 0            # consecutive-frame counter for entering turning mode
-Kp = 15
-Kd = -1
+Kp = 30
+Kd = -2.5
 kp_avoid = 0.15
 mode_change = True
 prev_error = 0
 frames_without_pillar = 0
 MAX_RECOVERY_TIME = 3
-MIN_RECOVERY_TIME = 0
+MIN_RECOVERY_TIME = 0.5
 RECOVERY_TURN_CORRECTION = -10
 exit_counter = 0
 EXIT_COUNT_THRESH = 5
 time_thresh = 0
-MAX_OFFBALANCE = 2.5
-EXTRA_RECOVERY_TIME = 3
-DISTANCE_ERROR_DIVISOR = 250
+MAX_OFFBALANCE = 1.5
+EXTRA_RECOVERY_TIME = 2
+DISTANCE_ERROR_DIVISOR = 200
+locked = False
+time_out = False
+time_good = False
+side_ok = False
+new_pillar = True
 from_turn = False
+exit_thresh = False
+unlock_condition = ""
 left_turn = TURN_LEFT_ANGLE + RECOVERY_CORRECTION
 right_turn = TURN_RIGHT_ANGLE - RECOVERY_CORRECTION
 def recovery(side, left_area, right_area, time, old_time, last_x):
@@ -343,6 +363,13 @@ def recovery(side, left_area, right_area, time, old_time, last_x):
     global active_color
     global turn_thresh_time
     global offbalance
+    global recovery_type
+    global prev_red
+    global time_out
+    global time_good
+    global side_ok
+    global locked
+    global exit_thresh
     time_thresh = time-old_time
     left_low = left_area < LEFT_ENTER_TURN_THRESH
     right_low = right_area < RIGHT_ENTER_TURN_THRESH
@@ -352,6 +379,9 @@ def recovery(side, left_area, right_area, time, old_time, last_x):
         prev_error = 0
         exit_counter = 0
         time_thresh = 0
+        new_pillar = True
+        locked = False
+        unlock_condition = "new pillar detected"
         mode = MODE_PILLAR_AVOID
         send_motor(PILLAR_AVOID_SPEED)
         return
@@ -361,26 +391,53 @@ def recovery(side, left_area, right_area, time, old_time, last_x):
         offbalance = -MAX_OFFREAD
     else:
         offbalance = round(left_area/right_area-right_area/left_area,2)
-    if not from_turn:
-        time_good = time_thresh > MIN_RECOVERY_TIME
-        time_out = time_thresh > MAX_RECOVERY_TIME
-        left_turn = TURN_LEFT_ANGLE + RECOVERY_CORRECTION + last_x*0.001
-        right_turn = TURN_RIGHT_ANGLE - RECOVERY_CORRECTION + last_x*0.001
+    if (lap_direction is None) or (pillar_location is None):
+        if not from_turn:
+            time_good = time_thresh > MIN_RECOVERY_TIME
+            time_out = time_thresh > MAX_RECOVERY_TIME
+            left_turn = TURN_LEFT_ANGLE + RECOVERY_CORRECTION + last_x*0.001
+            right_turn = TURN_RIGHT_ANGLE - RECOVERY_CORRECTION + last_x*0.001
+        else:
+            time_good = time_thresh > (MIN_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
+            time_out = time_thresh > (MAX_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
+            left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
+            right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
     else:
-        time_good = time_thresh > (MIN_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
-        time_out = time_thresh > (MAX_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
-        left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
-        right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
+        if recovery_type == NORMAL_RECOVERY:
+            # normal recovery steps
+            time_good = time_thresh > MIN_RECOVERY_TIME
+            time_out = time_thresh > MAX_RECOVERY_TIME
+            left_turn = TURN_LEFT_ANGLE + RECOVERY_CORRECTION + last_x*0.001
+            right_turn = TURN_RIGHT_ANGLE - RECOVERY_CORRECTION + last_x*0.001
+        if recovery_type == LIGHT_RECOVERY:
+            # light recovery steps
+            time_good = time_thresh > (MIN_RECOVERY_TIME-MIN_RECOVERY_TIME)
+            time_out = time_thresh > (MAX_RECOVERY_TIME-MIN_RECOVERY_TIME)
+            left_turn = TURN_LEFT_ANGLE 
+            right_turn = TURN_RIGHT_ANGLE
+        if recovery_type == HEAVY_RECOVERY:
+            # heavy recovery steps
+            time_good = time_thresh > (MIN_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
+            time_out = time_thresh > (MAX_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
+            left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
+            right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION + RECOVERY_TURN_CORRECTION)
     if side == "left":
         send_servo(left_turn)
         exit_thresh = left_area > LEFT_EXIT_GROW_THRESH and offbalance < MAX_OFFBALANCE
+        if not locked:
+            side_ok = left_low or right_low
     else:
         send_servo(right_turn)
         exit_thresh = right_area > RIGHT_EXIT_GROW_THRESH and offbalance > -MAX_OFFBALANCE
-    if (exit_thresh and time_good) or abs(offbalance) < 2.0:
+        if not locked:
+            side_ok = right_low or left_low
+    if (exit_thresh and time_good):
         exit_counter = exit_counter + 1
     else:
         exit_counter = 0
+    if side_ok:
+        locked = True
+        unlock_condition = "lock primed via recovery"
     if exit_counter > EXIT_COUNT_THRESH:
         mode = MODE_WALL_FOLLOW
         frames_without_pillar = 0
@@ -389,13 +446,17 @@ def recovery(side, left_area, right_area, time, old_time, last_x):
         turn_thresh_time = time
         time_thresh = 0
         from_turn = False
+        locked = False
+        unlock_condition = "entering wall follow mode"
         send_motor(WALL_FOLLOW_MOTOR_VALUE)
         recovery_mode = False
         return
-    if (time_out or left_low or right_low) and time_good:
+    if (time_out or side_ok) and time_good:
         turn_enter_time = time
         mode = MODE_CORNER_TURN
         frames_without_pillar = 0
+        locked = False
+        unlock_condition = "entering corner turn mode"
         prev_error = 0
         exit_counter = 0
         time_thresh = 0
@@ -419,7 +480,7 @@ sleep(0.5)
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
 try:
     while True:
-        print(servo_value,motor_value, lap_count, turn_count, turn_side, imu_heading, starting_heading, relative_heading, end_run, end_run_counter)
+        #print(servo_value,motor_value, lap_count, turn_count, turn_side, imu_heading, starting_heading, relative_heading, end_run, end_run_counter)
         if arduino.in_waiting > 0:
             arduino.reset_input_buffer()  # Throw away unread data from Arduino
         if ser.in_waiting > 0:
@@ -493,10 +554,20 @@ try:
                                 if abs(angle - (360-180.0)) < 0.3:
                                     d_180 = [180, dist, conf]
                                     deg_180 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-                            print(deg_0, "\n", deg_45, "\n", deg_90, "\n", deg_135, "\n", deg_180, "\n")
+                            #print(deg_0, "\n", deg_45, "\n", deg_90, "\n", deg_135, "\n", deg_180, "\n")
                         else:
                             print("Invalid packet")
+                            
             #print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])
+            print(f"""time_good: {time_good} 
+time_out: {time_out} 
+side_ok: {side_ok} 
+exit_thresh: {exit_thresh} 
+exit_to_wall = {exit_counter > EXIT_COUNT_THRESH} 
+exit_to_corner = {(time_out or side_ok) and time_good} 
+lock = {locked} 
+unlock = {unlock_condition} 
+recovery_override = {recovery_override}""")
             #Periodically request IMU heading from arduino
             if time.time()-last_heading_time >= HEADING_INTERVAL:
                 get_heading()
@@ -522,6 +593,17 @@ try:
                         pass
             leftArea, leftContour, leftMask = find_wall_area_lab(frame, ROI1, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
             rightArea, rightContour, rightMask = find_wall_area_lab(frame, ROI2, LAB_BLACK_LOWER, LAB_BLACK_UPPER)
+            if abs(relative_heading) > abs(highest_heading):
+                highest_heading = relative_heading
+            if lap_direction is None:
+                if highest_heading > lap_margin:
+                    lap_direction = "CW"
+                    outer_wall = "left"
+                    inner_wall = "right"
+                elif highest_heading < -lap_margin:
+                    lap_direction = "CCW"
+                    outer_wall = "right"
+                    inner_wall = "left"
             now = time.monotonic()
             # -------------------------
             # MODE / STATE MACHINE
@@ -529,6 +611,7 @@ try:
             if mode == MODE_WALL_FOLLOW:
                 if active_color is not None:
                     mode = MODE_PILLAR_AVOID
+                    new_pillar = True
                     avoid_color = active_color
                     from_turn = False
                     send_motor(PILLAR_AVOID_SPEED)
@@ -546,6 +629,7 @@ try:
                 prev_mode = mode
                 if starting:
                     time_elapsed = True
+                    new_pillar = True
                 if enter_counter >= ENTER_CONFIRM_FRAMES and time_elapsed:
                     starting = False
                     mode = MODE_CORNER_TURN
@@ -578,32 +662,138 @@ try:
                     prev_error = error
                     last_time = current_time
             elif mode == MODE_PILLAR_AVOID:
+                recovery_override = False
+                left_low = leftArea < LEFT_ENTER_TURN_THRESH
+                right_low = rightArea < RIGHT_ENTER_TURN_THRESH
+                if not locked:
+                    side_ok = left_low or right_low
+                if side_ok:
+                    locked = True
+                    unlock_condition = "lock primed"
                 if recovery_mode and active_color is not None:
                     recovery_mode = False
+                    new_pillar = True
                     frames_without_pillar = 0
                     exit_counter = 0
                     prev_error = 0
+                    send_motor(PILLAR_AVOID_SPEED)
+                if ((active_color == "green") and prev_red) or ((active_color == "red") and not prev_red):
+                    mode = MODE_PILLAR_AVOID
+                    new_pillar = True
+                    avoid_color = active_color
+                    from_turn = False
                     send_motor(PILLAR_AVOID_SPEED)
                 if leftArea == 0:
                     offbalance = MAX_OFFREAD
                 elif rightArea == 0:
                     offbalance = -MAX_OFFREAD
                 else:
-                        offbalance = round(leftArea/rightArea-rightArea/leftArea,2)
+                    offbalance = round(leftArea/rightArea-rightArea/leftArea,2)
                 if active_color == "red":
                     target_cx = RED_TARGET_CX
                     prev_red = True
                 elif active_color == "green":
                     target_cx = GREEN_TARGET_CX
                     prev_red = False
+                if new_pillar:
+                    if active_color is not None:
+                        if ColorBias:
+                            if lap_direction is None:
+                                if active_cx < middle_divisor:
+                                    pillar_location = "left"
+                                else:
+                                    pillar_location = "right"	
+                            else:
+                                if (lap_direction == "CW") and prev_red:
+                                    if PositionRequired:
+                                        if active_cx < right_bias:
+                                            pillar_location = "left"
+                                        else:
+                                            pillar_location = "right"	
+                                    else:
+                                        pillar_location = "left"
+                                if (lap_direction == "CW") and not prev_red:
+                                    if PositionRequired:
+                                        if active_cx < left_bias:
+                                            pillar_location = "left"
+                                        else:
+                                            pillar_location = "right"	
+                                    else:
+                                        pillar_location = "right"
+                                if (lap_direction == "CCW") and prev_red:
+                                    if PositionRequired:
+                                        if active_cx < left_bias:
+                                            pillar_location = "left"
+                                        else:
+                                            pillar_location = "right"	
+                                    else:
+                                        pillar_location = "right"
+                                if (lap_direction == "CCW") and not prev_red:
+                                    if PositionRequired:
+                                        if active_cx < right_bias:
+                                            pillar_location = "left"
+                                        else:
+                                            pillar_location = "right"	
+                                    else:
+                                        pillar_location = "left"
+                        else:
+                            if active_cx < middle_divisor:
+                                pillar_location = "left"
+                            else:
+                                pillar_location = "right"
+                    new_pillar = False
+                if (lap_direction is None) or (pillar_location is None):
+                    # DEFAULT = NORMAL RECOVERY
+                    recovery_type = NORMAL_RECOVERY
+                else:
+                    if (lap_direction == "CW") and prev_red and (pillar_location == "left"):
+                        # CW RED LEFT = NORMAL RECOVERY
+                        recovery_type = NORMAL_RECOVERY
+                    if (lap_direction == "CW") and prev_red and (pillar_location == "right"):
+                        # CW RED RIGHT = LIGHT RECOVERY
+                       recovery_type = LIGHT_RECOVERY
+                    if (lap_direction == "CW") and not prev_red and (pillar_location == "left"):
+                        # CW GREEN LEFT = HEAVY RECOVERY
+                        recovery_type = HEAVY_RECOVERY
+                    if (lap_direction == "CW") and not prev_red and (pillar_location == "right"):
+                        # CW GREEN RIGHT = NORMAL RECOVERY
+                        recovery_type = NORMAL_RECOVERY
+                    if (lap_direction == "CCW") and prev_red and (pillar_location == "left"):
+                        # CCW RED LEFT = NORMAL RECOVERY
+                        recovery_type = NORMAL_RECOVERY
+                    if (lap_direction == "CCW") and prev_red and (pillar_location == "right"):
+                        # CCW RED RIGHT = HEAVY RECOVERY
+                        recovery_type = HEAVY_RECOVERY
+                    if (lap_direction == "CCW") and not prev_red and (pillar_location == "left"):
+                        # CCW GREEN LEFT = LIGHT RECOVERY
+                        recovery_type = LIGHT_RECOVERY
+                    if (lap_direction == "CCW") and not prev_red and (pillar_location == "right"):
+                        # CCW GREEN RIGHT = NORMAL RECOVERY
+                        recovery_type = NORMAL_RECOVERY
+                if recovery_type == NORMAL_RECOVERY:
+                    # normal recovery steps
+                    target_cx = target_cx
+                    extra_divisor = 0
+                if recovery_type == LIGHT_RECOVERY:
+                    # light recovery steps
+                    if prev_red:
+                        target_cx = target_cx + 50
+                    else:
+                        target_cx = target_cx - 50
+                    extra_divisor = 100
+                    recovery_override = True
+                if recovery_type == HEAVY_RECOVERY:
+                    # heavy recovery steps
+                    extra_divisor = -100
+                    target_cx = target_cx
                 error_avoid = active_cx - target_cx
-                distance_error = round((active_cy)/DISTANCE_ERROR_DIVISOR, 2)
+                distance_error = round((active_cy)/(DISTANCE_ERROR_DIVISOR+extra_divisor), 2)
                 correction = int(kp_avoid*error_avoid)*(distance_error)
                 if correction > PILLAR_MAX_TURN_RATE:
                     correction = PILLAR_MAX_TURN_RATE
                 elif correction < -PILLAR_MAX_TURN_RATE:
                     correction = -PILLAR_MAX_TURN_RATE
-                print(correction)
+                #print(correction)
                 if not recovery_mode:
                     send_servo_assigned(correction)
                 if active_cy > MAX_PILLAR_Y:
@@ -613,6 +803,22 @@ try:
                 else:
                     frames_without_pillar = 0
                 if frames_without_pillar >= PILLAR_EXIT_FRAMES:
+                    if recovery_override:
+                        if side_ok:
+                            turn_enter_time = now
+                            mode = MODE_CORNER_TURN
+                            frames_without_pillar = 0
+                            prev_error = 0
+                            exit_counter = 0
+                            time_thresh = 0
+                            from_turn = True
+                            if left_low:
+                                turn_trigger_side = "left"
+                            elif right_low:
+                                turn_trigger_side = "right"
+                            send_motor(CORNER_TURN_MOTOR_VALUE)
+                            recovery_mode = False
+                            continue
                     if not recovery_mode:
                         start_time = now
                         recovery_mode = True
@@ -622,7 +828,7 @@ try:
                         recovery("right", leftArea, rightArea, now, start_time, error_avoid)
 
             else:  # MODE_CORNER_TURN
-                if active_color is not None:
+                if (active_color is not None) and (not recovery_override):
                     mode = MODE_PILLAR_AVOID
                     avoid_color = active_color
                     send_motor(PILLAR_AVOID_SPEED)
@@ -630,6 +836,7 @@ try:
                 if prev_mode != mode: 
                     send_motor(CORNER_TURN_MOTOR_VALUE)
                     mode_change = True
+                    new_pillar = True
                     prev_error = 0
                     turn_count += 1
                     if turn_count % 4 == 0:
@@ -655,7 +862,11 @@ try:
                 # Requirement (2): 5 seconds passed since entering turning state
                 time_ok = elapsed >= EXIT_TIME_SEC
                 time_max = elapsed >= MAX_TIME_SEC
-                print(time_ok, grew_ok, balance_ok)
+                #print(time_ok, grew_ok, balance_ok)
+                if time_ok and recovery_override:
+                    recovery_override = False
+                    locked = False
+                    unlock_condition = "via recovery override"
                 prev_mode = mode
                 # Exit turning mode only if BOTH requirements are true
                 if TOGGLE_GYRO_TURN:
@@ -718,7 +929,18 @@ try:
             draw_roi(frame, ROI2, label="ROI2 (Right)")
             xyPillar = (roiPillar[0], roiPillar[1], roiPillar[0]+roiPillar[2], roiPillar[1]+roiPillar[3])
             draw_roi(frame, xyPillar, label="Pillar Roi")
-            
+            if not ColorBias:
+                draw_roi(frame, middle_divisor_line, label="Middle")
+            else:
+                if lap_direction is None:
+                    draw_roi(frame, middle_divisor_line, label="Middle")
+                else:
+                    if lap_direction == "CW":
+                        draw_roi(frame, left_bias_line,color=(0,255,0), label="Left Bias")
+                        draw_roi(frame, right_bias_line,color=(0,0,255), label="Right Bias")
+                    else:
+                        draw_roi(frame, left_bias_line,color=(0,0,255), label="Left Bias")
+                        draw_roi(frame, right_bias_line,color=(0,255,0), label="Right Bias")
             if leftContour is not None:
                 cv2.drawContours(frame, [leftContour], -1, (255, 255, 0), 2)
             if rightContour is not None:
@@ -741,7 +963,11 @@ try:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.putText(frame, deg_180, (300, 95),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.putText(frame, f"Relative IMU Heading: {relative_heading}", (250, 125),
+            cv2.putText(frame, f"Relative IMU Heading: {relative_heading}", (10, 420),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, f"Highest IMU Heading: {highest_heading}", (10, 440),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, f"Lap Direction: {lap_direction}", (10, 460),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
             # Mode line + extra info
             if mode == MODE_WALL_FOLLOW:
@@ -755,6 +981,10 @@ try:
                 cv2.putText(frame, f"Recovery Mode: {recovery_mode}", (10, 155),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)  
             elif mode == MODE_PILLAR_AVOID:
+                cx_line = [active_cx-5, 100, active_cx+5, 500]
+                cy_line = [0, active_cy, 640, active_cy]
+                draw_roi(frame, cx_line,color=(255,255,255)) 
+                draw_roi(frame, cy_line,color=(255,0,255))
                 if active_color == "red":
                     mode_color = (0, 0, 255)
                 elif active_color == "green":
@@ -778,9 +1008,9 @@ try:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, recov_color, 2, cv2.LINE_AA)   
                 cv2.putText(frame, f"Recovery Frames: {exit_counter} / {EXIT_COUNT_THRESH} ",
                         (10, 175), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-                cv2.putText(frame, f"Recovery Time: {time_thresh:0.1f}s / {MAX_RECOVERY_TIME}s ",
+                cv2.putText(frame, f"Recovery Time: {time_thresh:0.1f}s {time_out} {time_good} {side_ok}",
                         (10, 195), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-                cv2.putText(frame, f"Distance Error: {active_cy} / {DISTANCE_ERROR_DIVISOR} = {distance_error} ",
+                cv2.putText(frame, f"Distance Error: {active_cy} / {DISTANCE_ERROR_DIVISOR+extra_divisor} = {distance_error} ",
                         (10, 215), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
                 if offbalance > 0:
                     larger_side = "left"
@@ -792,7 +1022,15 @@ try:
                         (10, 235), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
                 cv2.putText(frame, f"left_turn: {left_turn} right_turn = {right_turn} from_turn: {from_turn}",
                         (10, 255), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-                print(f"Off Balance: {offbalance} Larger Side = {larger_side}")
+                if recovery_type == 0:
+                    recov_type = "LIGHT"
+                if recovery_type == 1:
+                    recov_type = "NORMAL"
+                if recovery_type == 2:
+                    recov_type = "HEAVY"
+                cv2.putText(frame, f"Pillar Location: {pillar_location}, Recovery Type: {recov_type}",
+                        (10, 275), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
+                #print(f"Off Balance: {offbalance} Larger Side = {larger_side}")
                         
             else:
                 mode_color = (255, 0, 0)    # red
@@ -814,7 +1052,7 @@ try:
                         (10, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
                 cv2.putText(frame, f"left_turn: {left_turn} right_turn = {right_turn}",
                         (10, 185), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-                print(f"Off Balance: {offbalance} Larger Side = {larger_side}")
+                #print(f"Off Balance: {offbalance} Larger Side = {larger_side}")
             cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
 
             # Optional: show masks for tuning thresholds
