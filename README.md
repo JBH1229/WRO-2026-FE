@@ -628,49 +628,102 @@ The **camera** is positioned to provide a clear lifted forward-facing view of th
 ---
 
 ## 2. State Descriptions
-
 ### INITIALIZATION
-* **Function**: Sets up hardware interfaces (Serial connection with Arduino running at 115200 baud rate, setting up PiCamera2)
-* **Operations**:
-  * Default position set for the servos (66) and for the motor (1500).
-  * Serial buffer reset and Motor Drive operation set to start driving (1622).
-* **Next State**: Transition to WALL_FOLLOW occurs immediately.
+
+- **Function**: Initializes the robot's hardware interfaces, including the Arduino serial connection at 115200 baud, LiDAR at 230400 baud, Raspberry Pi Camera, and start button.
+- **Operations**:
+  - Sets the default servo position to **82°** and motor value to **1500**.
+  - Clears the Arduino and LiDAR serial buffers.
+  - Initializes IMU heading tracking and camera capture at **640×480 and 30 FPS**.
+  - Configures the LiDAR packet parser to extract distance measurements at **0°, 45°, 90°, 135°, and 180°**.
+  - Waits for the physical start button to be pressed before starting the robot.
+  - Sets the motor to the wall-following speed of **1620** after the start button is pressed.
+- **Next State**: The robot performs its startup positioning sequence and then transitions to **WALL_FOLLOW**.
 
 ### WALL_FOLLOW
-* **Function**: Operating state by default. It moves straight ahead in the lanes using wall following.
-* **Controller**: PD Controller based on the difference in area between the left (ROI1) and right (ROI2) black walls' contours.
-  $$\text{error} = \frac{\text{leftArea} - \text{rightArea}}{\text{leftArea} + \text{rightArea}}$$
-* **Transitions**:
-  * **To PILLAR_AVOID**: Occurs when active_color is observed (`red_area` or `green_area` > MIN_REACT_AREA [800]).
-  * **To CORNER_TURN**: Occurs when low_left or low_right (< 1000) is observed for ENTER_CONFIRM_FRAMES (5) successive frames and time_elapsed is true.
-  * **To END_RUN**: Occurs when turn_count >= TURN_LIMIT (12).
+
+- **Function**: Main driving state. The robot follows the walls using camera-based contour detection and a PD controller.
+- **Controller**: Uses the difference between the left and right wall contour areas:
+
+  `error=(leftArea−rightArea)/(leftArea+rightArea)`
+
+  The PD controller calculates a steering correction using proportional gain **Kp = 30** and derivative gain **Kd = -2.5**. Steering correction is limited to **±40°**.
+- **Operations**:
+  - Detects black wall regions using **LAB color thresholding**.
+  - Uses two camera regions of interest (ROI1 and ROI2) to estimate the left and right wall positions.
+  - Requires the wall-loss condition to remain active for **5 consecutive frames** before entering a turn.
+  - Tracks IMU heading to determine whether the robot is travelling clockwise (CW) or counter-clockwise (CCW).
+- **Transitions**:
+  - **To PILLAR_AVOID**: Occurs when a red or green pillar is detected with an area greater than **MIN_REACT_AREA (500)**.
+  - **To CORNER_TURN**: Occurs when either wall contour area falls below **1000** for **5 consecutive frames**, provided the required time has elapsed since the previous turn.
+  - **To END_RUN**: The run-ending condition is activated when the relative IMU heading exceeds approximately **1040°**. After **30 consecutive frames** and a heading beyond **1070°**, the robot stops.
 
 ### PILLAR_AVOID
-* **Purpose**: Dodges obstacle pillars through detection with HSV color thresholding.
-* **Control Logic**:
-  * Target RED_TARGET_CX (40) for red pillars or GREEN_TARGET_CX (600) for green pillars.
-  * Utilizes Proportional control using dynamic cx error correction formula:
-    $$\text{correction} = kp_{\text{avoid}} + (active_{\text{cx}} - target_{\text{cx}})$$
-* **Transitions**:
-  * **To WALL_FOLLOW**: Triggers when frames_without_pillar >= PILLAR_EXIT_FRAMES (8 frames).
+
+- **Purpose**: Detects and avoids colored obstacle pillars using HSV color thresholding and camera-based position tracking.
+- **Detection**:
+  - Identifies red and green pillars using separate HSV masks.
+  - Selects the largest valid contour while rejecting small noise and objects above the minimum pillar height.
+  - Determines the pillar's center position (`active_cx`) and vertical position (`active_cy`).
+- **Control Logic**:
+  - Uses different target positions for each pillar color: **RED_TARGET_CX = 90** and **GREEN_TARGET_CX = 550**.
+  - Uses the detected pillar position to calculate a proportional steering correction.
+  - The correction is scaled using the pillar's vertical position to adjust steering based on distance.
+  - Steering correction is limited to **±40°**.
+- **Color Bias**:
+  - Uses the detected lap direction, pillar color, and pillar position to determine which side of the pillar the robot should recover toward.
+  - Recovery can be classified as **LIGHT, NORMAL, or HEAVY** depending on the pillar configuration.
+- **Recovery Mode**:
+  - Activates after the pillar is no longer reliably detected.
+  - Uses wall contour areas, time limits, balance measurements, and the previous pillar position to recover the robot back toward the correct driving path.
+- **Transitions**:
+  - **To WALL_FOLLOW**: Occurs after the pillar has been absent for **8 frames** and recovery conditions are satisfied.
+  - **To CORNER_TURN**: Can occur when recovery determines that a corner has been reached or when a recovery timeout/side condition is satisfied.
+  - **To PILLAR_AVOID**: Remains active or resets when another pillar is detected during recovery.
 
 ### CORNER_TURN
-* **Purpose**: Implements predetermined 90° turns.
-* **Control Logic**:
-  * Runs with motor at CORNER_TURN_MOTOR_VALUE (1622).
-  * Turns servo at TURN_LEFT_ANGLE (41°) or TURN_RIGHT_ANGLE (81°) as dictated by turn_trigger_side.
-  * Increases turn_count by 1, increment lap_count every 4 turns.
-* **Transitions**:
-  * **To WALL_FOLLOW**:
-    * **If Gyro Mode is active (TOGGLE_GYRO_TURN)**: Triggers when abs_turn_heading <= GYRO_TURN_VAL (15°).
-    * **If Vision Mode is active**: Triggers when wall contour area increases past threshold (grew_ok) AND EXIT_TIME_SEC elapsed OR MAX_TIME_SEC (10.0s) elapsed.
+
+- **Purpose**: Performs predetermined approximately 90° corner turns based on which wall contour triggered the turn.
+- **Control Logic**:
+  - Runs the motor at **CORNER_TURN_MOTOR_VALUE (1620)**.
+  - Uses **57°** steering for left turns and **107°** steering for right turns.
+  - If both sides trigger the turn condition, the previous turn direction is used to select the direction.
+  - Increments `turn_count` whenever the robot enters the corner-turn state.
+  - Increments `lap_count` every **4 turns**.
+- **Turn Exit**:
+  - **Vision Mode** is currently active because `TOGGLE_GYRO_TURN = False`.
+  - The robot normally exits when:
+    - The wall contour that triggered the turn grows above **2500**,
+    - The robot has turned for at least **0.5 seconds**, and
+    - The wall areas are sufficiently balanced.
+  - A maximum turn time of **10 seconds** prevents the robot from remaining in the turning state indefinitely.
+  - **Gyro Mode**, if enabled, can instead exit when the absolute turn heading falls below **15°**.
+- **Transitions**:
+  - **To WALL_FOLLOW**: Occurs when the turn exit conditions are satisfied or the maximum turn time is reached.
+  - **To PILLAR_AVOID**: Occurs if a new colored pillar is detected during the turn and recovery override is not active.
+
+### START_RUN
+
+- **Purpose**: Performs the initial movement and positioning sequence before normal autonomous driving begins.
+- **Operations**:
+  - Uses LiDAR measurements at **0° and 180°** to determine the robot's starting orientation.
+  - Uses the IMU to monitor the robot's rotation during the positioning sequence.
+  - Performs a sequence of forward and reverse movements with maximum steering to orient the robot correctly.
+  - Uses different movement sequences depending on whether the robot is facing left or right.
+- **Next State**: Once the startup positioning sequence is complete, `start_run` is set to `False` and the robot enters the normal state machine beginning with **WALL_FOLLOW**.
 
 ### END_RUN & STOP
-* **Purpose**: Shutdown protocol after run completion.
-* **Actions**:
-  * Counts up to END_RUN_LIMIT (100 frames).
-  * Neutralizes steer at 66 and motor at 1500.
-  * Releases camera feed and serial port.
+
+- **Purpose**: Safely stops the robot after the required number of laps/turns has been completed.
+- **Detection**:
+  - Continuously monitors the accumulated relative IMU heading.
+  - Activates the end-run counter after the relative heading exceeds approximately **1040°**.
+  - After **30 frames** with the required heading maintained, the robot stops.
+- **Actions**:
+  - Returns the steering to the default position of **82°**.
+  - Sets the motor to the neutral value of **1500**.
+  - Releases the camera, closes the Arduino serial connection, and destroys OpenCV windows.
+  - Ensures the motor is stopped and steering is centered in the final cleanup routine.
   
 ---
 
