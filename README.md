@@ -267,7 +267,7 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | [LiDAR sensor](https://www.aliexpress.com/item/1005003012681021.html?spm=a2g0o.order_list.order_list_main.31.67dd18029q37Y0)  | $81.14  |
 | [Regulator](https://ca.robotshop.com/products/yahboom-power-supply-expansion-board-raspberry-pi-5) | $17.54 |
 | [Nano tape](https://www.amazon.ca/Ohayooz-Removable-Adhesive-Washable-Waterproof/dp/B0DJX3J7V6/ref=sr_1_5?dib=eyJ2IjoiMSJ9.4xs5nq5gFcHaOOpzaJjaMN0_azbULmeVyD8pNeklZcDBx1WeliPTh1GmLrq_QszISStyy2xWNMsVTvi9F2-MjdOFE1uMqWsDOs4wMZy9eCiTZcGXj-_p1O76AdoWVeJdbd9oE0J45jQPuQHyVvC5U_d3zSNre8Yo6vamYCPCTLxT3ojPra2FbWc6d77g_bmG1Mkmak3yqo0TmhIXMXnrilEh7iyucooazrCGLo7r01bNEm9QjQfJgwg0kl0sJAzUFfbutXz_a7xbWKLfesgSTevqlMMsHLOt2WqoNA0ZjUI.SWvS86ikc4qES7ofzt8WUfOumJGDljk0pQOSa4xiubs&dib_tag=se&keywords=nano%2Btape&qid=1782078372&sr=8-5&th=1) | $9.97 |
-| [3d-prints](3d-prints) | $*** |
+| [3d-prints](3d-prints) | $24.99 |
 | [Screw Set](https://www.aliexpress.com/item/1005002438190831.html) | $22.65 |
 | [Wheels](https://www.amazon.ca/AllinRC-Pre-glued-Compatible-WLtoys-Racing/dp/B0B4DH61L9/ref=sr_1_14?crid=QZ0121YI3198&dib=eyJ2IjoiMSJ9.QJZd0ar8ehCcAtHZG2Cyl6PoyAFGZwEOcYA82wZyA45A7hnFD-N6i5WUQNJQQ5ZMctX5NR70HJd1PKE11N4uLqc-NyOsA5w7RR7l-HHHaxQfAv3DUfy4bmMrjt60gOF4PKK5zL7GlH1rZq3ozSlZntAaRzzGgRm_m6qeqB5FTlBql4sWxGOhj7D9dbpxUNwIsXUO_j2BYpu7WjhJrKYbBN4nvb0HSS0SILDtaQJuE7YjVr__sEwPc0HOAaoLpi1fSRvueEwpht6ciW26XOKRiKRQFm5EJz8l5SwWa7qmFu4.jT9UwEPv9LPwFMaTVk2SNUaIlbf-uy0nCjSzeU-9MaQ&dib_tag=se&keywords=rc%2Bcar%2Bwheels%2B1%2F28&qid=1769998887&sprefix=rc%2Bcar%2Bwheels%2B1%2F28%2Caps%2C143&sr=8-14&th=1) | $26.87 |
 | Total Price Before Tax   | $***  |
