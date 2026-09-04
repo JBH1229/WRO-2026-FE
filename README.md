@@ -47,6 +47,8 @@ Our repository for the 2026 World Robot Olympiad: in the category Future Enginee
 ### Jonathan Huang
 **Age:** 15
 
+<img src="./Images/jonathan.jpg" width="25%" height="25%" />
+
 **Introduction:**
 Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am interested in airplanes, and enjoy learning about how they work in my free time. Besides that, I enjoy playing video games with my friends. I am currently attending Notre Dame CSS.
 
@@ -54,6 +56,8 @@ Hi, my name is Jonathan and I'm from Canada, this is my fifth WRO season. I am i
 
 ### Walter Wu
 **Age:** 15
+
+<img src="./Images/walter.jpg" width="25%" height="25%" />
 
 **Introduction:**
 Hi, my name is Walter and I'm also from Canada, this is my third WRO season;  I have many interests, such as sports like volleyball, and hobbies ranging from drawing and video games to cooking. I am currently attending All Saints CSS and am enrolled in their Arts & Media Program.
@@ -530,6 +534,8 @@ Arduino Nano
 ```
 ## Camera
 
+<img src="./Images/picam.jpg" width="50%" height="50%" />
+
 The robot uses a **Raspberry Pi Camera** which excels in taking images of the surrounding environment during the competition. Images provided by the camera are analyzed by the Raspberry Pi 5, helping the robot recognize various aspects of the course.
 
 The camera is mounted on the Raspberry Pi so that it gives a good picture of the space in front of the robot including the side walls. The images taken by the camera are processed using computer vision algorithms before being used for navigation.
@@ -545,6 +551,8 @@ The camera is mounted on the Raspberry Pi so that it gives a good picture of the
 | Purpose | Computer Vision / Navigation |
 
 ## LiDAR
+
+<img src="./Images/2dlidar.jpg" width="50%" height="50%" />
 
 The robot uses a **D500 LiDAR sensor** for parking only. The LiDAR provides distance measurements that allow the Raspberry Pi to determine the robot's position relative to the parking walls and outside walls.
 
@@ -567,7 +575,6 @@ The placement of the camera and LiDAR was designed while keeping in mind not to 
 
 The **camera** is positioned to provide a clear lifted forward-facing view of the course. The **LiDAR** is positioned so that it can measure the distance between the robot and surrounding walls or obstacles. The sensors are mounted securely to prevent movement and maintain consistent measurements during operation.
 
-### PICTURE OF SENSORS ON ROBOT ###
 
 
 # Software
