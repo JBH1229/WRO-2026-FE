@@ -695,4 +695,4 @@ All of our testing can be found in our engineering journal [here](https://docs.g
 Our open challenge video can be found on our youtube [here](https://youtu.be/NveL-KeYepw)
 
 ## Obstacle Challenge Video
-Our obstacle challenge video can be found on our youtube [here](______)
+Our obstacle challenge video can be found on our youtube [here](https://youtu.be/7QU7L7XVNVw)
