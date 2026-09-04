@@ -38,9 +38,9 @@ Our repository for the 2026 World Robot Olympiad: in the category Future Enginee
     * [Circuit Diagram](#circuit-diagram)
 * [Software](#software)
 * [Testing](#testing)
-  * [Performance Videos](#video)
-    * [Open challenge](#OPCV)
-    * [Obstacle Challenge](#OBCV)
+  * [Performance Videos](#performance-videos)
+    * [Open challenge](#open-challenge-video)
+    * [Obstacle Challenge](#obstacle-challenge-video)
 
 # Team Members
 
@@ -688,6 +688,8 @@ The **camera** is positioned to provide a clear lifted forward-facing view of th
 
 # Testing
 All of our testing can be found in our engineering journal [here](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
+
+# Performance Videos
 
 ## Open Challenge Video
 Our open challenge video can be found on our youtube [here](https://youtu.be/NveL-KeYepw)
