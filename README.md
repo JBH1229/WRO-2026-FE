@@ -270,8 +270,8 @@ Click [here](Electrical/README.md#why-we-changed-the-robot) to see the main diff
 | [3d-prints](3d-prints) | $24.99 |
 | [Screw Set](https://www.aliexpress.com/item/1005002438190831.html) | $22.65 |
 | [Wheels](https://www.amazon.ca/AllinRC-Pre-glued-Compatible-WLtoys-Racing/dp/B0B4DH61L9/ref=sr_1_14?crid=QZ0121YI3198&dib=eyJ2IjoiMSJ9.QJZd0ar8ehCcAtHZG2Cyl6PoyAFGZwEOcYA82wZyA45A7hnFD-N6i5WUQNJQQ5ZMctX5NR70HJd1PKE11N4uLqc-NyOsA5w7RR7l-HHHaxQfAv3DUfy4bmMrjt60gOF4PKK5zL7GlH1rZq3ozSlZntAaRzzGgRm_m6qeqB5FTlBql4sWxGOhj7D9dbpxUNwIsXUO_j2BYpu7WjhJrKYbBN4nvb0HSS0SILDtaQJuE7YjVr__sEwPc0HOAaoLpi1fSRvueEwpht6ciW26XOKRiKRQFm5EJz8l5SwWa7qmFu4.jT9UwEPv9LPwFMaTVk2SNUaIlbf-uy0nCjSzeU-9MaQ&dib_tag=se&keywords=rc%2Bcar%2Bwheels%2B1%2F28&qid=1769998887&sprefix=rc%2Bcar%2Bwheels%2B1%2F28%2Caps%2C143&sr=8-14&th=1) | $26.87 |
-| Total Price Before Tax   | $***  |
-| Total Price   | $***  |
+| Total Price Before Tax   | $911.3  |
+| Total Price   | $1 029.77  |
 
 ***The additions to the RASPI 5 include but are not limited to USB-C PD Power Supply, Raspberry Pi Active Cooler, and a Micro-HDMI to HDMI cable***
 
