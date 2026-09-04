@@ -690,7 +690,7 @@ The **camera** is positioned to provide a clear lifted forward-facing view of th
 All of our testing can be found in our engineering journal [here](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0)
 
 ## Open Challenge Video
-Our open challenge video can be found on our youtube [here](______)
+Our open challenge video can be found on our youtube [here](https://youtu.be/NveL-KeYepw)
 
 ## Obstacle Challenge Video
 Our obstacle challenge video can be found on our youtube [here](______)
