@@ -170,6 +170,10 @@ The robot uses multiple sensors to perceive its surroundings and determine its p
 Sensor data is processed by the robot's control software and used to make driving and steering decisions.
 
 ### PHOTO OF SENSORS ON ROBOT ###
+| *Pi Camera* | *2D LiDAR* | *IMU* |
+| :--: | :--: | :--: |
+| <img src="./Images/picam.jpg" width="100%" height="100%" /> | <img src="./Images/2dlidar.jpg" width="100%" height="100%" /> | <img src="./Images/arduinoIMU.jpg" width="100%" height="100%" /> |
+
 
 ## Computer / Controller
 
