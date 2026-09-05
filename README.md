@@ -66,7 +66,7 @@ Hi, my name is Walter and I'm also from Canada, this is my third WRO season;  I 
 <table>
   <tr>
     <td width="50%" style="text-align: left;">
-      <img src="https://explorer-robotics.com/images/users/CoachRice.png" width="7500%"> 
+      <img src="./Images/coach_rice.jpg" width="70%"> 
     </td>
     <td width="50%" style="text-align: left; vertical-align: top;">
       <h3>Accolades:</h3>
