@@ -44,6 +44,30 @@ void SetRGBLED(int state)//0 - Off; 1 - RED; 2 - Green; 3 - Blue
     digitalWrite(LEDG, HIGH);// Green OFF
     digitalWrite(LEDB, LOW);// Blue ON
   }
+  else if(state == 4)
+  {
+    digitalWrite(LEDR, LOW);// Red ON
+    digitalWrite(LEDG, LOW);// Green ON
+    digitalWrite(LEDB, HIGH);// Blue OFF
+  }
+  else if(state == 5)
+  {
+    digitalWrite(LEDR, HIGH);// Red OFF
+    digitalWrite(LEDG, LOW);// Green ON
+    digitalWrite(LEDB, LOW);// Blue ON
+  }
+  else if(state == 6)
+  {
+    digitalWrite(LEDR, LOW);// Red ON
+    digitalWrite(LEDG, HIGH);// Green OFF
+    digitalWrite(LEDB, LOW);// Blue ON
+  }
+  else if(state == 7)
+  {
+    digitalWrite(LEDR, LOW);// Red ON
+    digitalWrite(LEDG, LOW);// Green ON
+    digitalWrite(LEDB, LOW);// Blue ON
+  }
 }
 
 void setup() {
@@ -128,7 +152,7 @@ static void handleCommand(char* command) {
     if (value < 1000 || value > 2000) return;
       lizardESC.writeMicroseconds(value);
   } else if (type == 'L') {
-    if (value < 0 || value > 3) return;
+    if (value < 0 || value > 7) return;
       SetRGBLED(value);
   }
 }
