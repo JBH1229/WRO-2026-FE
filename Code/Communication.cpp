@@ -127,6 +127,9 @@ static void handleCommand(char* command) {
   } else if (type == 'M') {
     if (value < 1000 || value > 2000) return;
       lizardESC.writeMicroseconds(value);
+  } else if (type == 'L') {
+    if (value < 0 || value > 3) return;
+      SetRGBLED(value);
   }
 }
 
