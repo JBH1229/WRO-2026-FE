@@ -8,6 +8,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "Debug":
 ColorBias = True
 PositionRequired = True
 ForceDefault = False
+DOYELLOW = False
+DOEND = False
 start_run = True
 end_run = False
 kick = False
@@ -135,7 +137,7 @@ relative_heading = 0.0
 first_read = True
 end_run_count = False
 end_run_counter = 0
-END_RUN_LIMIT = 55
+END_RUN_LIMIT = 75
 TOGGLE_GYRO_TURN = False
 GYRO_TURN_VAL = 15
 relative_turn_heading = 0.0
@@ -368,7 +370,7 @@ RIGHT_EXIT_GROW_THRESH  = 2500
 EXIT_TIME_SEC     = 0     # AND at least 10 seconds must pass since entry
 EXIT_TIME_THRESH = 0 #                                                                     NOW AT 0 DUE TO PILLAR AVOID 
 MAX_TIME_SEC 	  = 10.0
-TURN_LEFT_ANGLE   = 72 # change lower if nessassary  avg 41 82-15 51
+TURN_LEFT_ANGLE   = 67 # change lower if nessassary  avg 41 82-15 51
 TURN_RIGHT_ANGLE  = 107 # change higher if nessassary avg 81 82+15 71
 RECOVERY_CORRECTION = 5 # reduces the turn rate by this much when recovering
 PILLAR_MAX_TURN_RATE = 50
@@ -456,6 +458,8 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 	time_thresh = time-old_time
 	left_low = left_area < LEFT_ENTER_TURN_THRESH
 	right_low = right_area < RIGHT_ENTER_TURN_THRESH
+	left_gone = left_area <= 0
+	right_gone = left_area <= 0
 	middle_high = middle_area > 5000
 	if (active_color is not None) and (not ((recovery_type == LIGHT_RECOVERY) and (active_cy > 250))) and (not ((active_color == "green") and (active_cy > 320))):
 		print("exit recovery mode to pillar avoid")
@@ -512,7 +516,7 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 				leeway = 1.5
 			else:
 				leeway = 0
-			time_passed = time_thresh > 0.75
+			time_passed = time_thresh > 1.5
 			time_good = time_thresh > (MIN_RECOVERY_TIME+EXTRA_RECOVERY_TIME-leeway)
 			time_out = time_thresh > (MAX_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
 			left_turn = TURN_LEFT_ANGLE - RECOVERY_CORRECTION 
@@ -526,7 +530,9 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 		else:
 			send_servo(left_turn)
 		exit_thresh = left_area > LEFT_EXIT_GROW_THRESH and offbalance < MAX_OFFBALANCE
-		side_ok = right_low
+		side_ok = right_low or left_low
+		if recovery_type == LIGHT_RECOVERY:
+			side_ok = right_low
 	else:
 		if recovery_type == LIGHT_RECOVERY:
 			if not past_pillar:
@@ -536,9 +542,10 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 		else:
 			send_servo(right_turn)
 		exit_thresh = right_area > RIGHT_EXIT_GROW_THRESH and offbalance > -MAX_OFFBALANCE
-		side_ok = left_low
+		side_ok = left_low or right_low
 		if recovery_type == LIGHT_RECOVERY:
 			side_ok = left_low
+			"""
 	if recovery_type == HEAVY_RECOVERY:
 		if middle_high:
 			middle_seen = True
@@ -555,7 +562,16 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 		if not middle_high:
 			regain_control = True
 			go_around = False
-	if exit_thresh and ((time_good or recovery_override) and not go_around):
+			"""
+	if left_gone:
+		side_ok = True
+		left_low = True
+		time_good = True
+	if right_gone:
+		side_ok = True
+		right_low = True
+		time_good = True
+	if exit_thresh and time_good:
 		exit_counter = exit_counter + 1
 	else:
 		exit_counter = 0
@@ -571,7 +587,7 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 		recovery_override = False
 		recovery_mode = False
 		return
-	if (time_out or side_ok) and ((time_good or recovery_override) and not go_around):
+	if (time_out or side_ok) and time_good:
 		turn_enter_time = time
 		mode = MODE_CORNER_TURN
 		frames_without_pillar = 0
@@ -624,23 +640,67 @@ try:
 			arduino.reset_input_buffer()  # Throw away unread data from Arduino
 		if ser.in_waiting > 0:
 			ser.reset_input_buffer()
-		if abs(relative_heading) > 1040: #1040
-			end_run_count = True
-		if end_run_count == True:
-			end_run_counter += 1
-		if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1060: #1060
-			end_run = True
+		if DOEND:
+			if lap_direction is None:
+				if abs(relative_heading) > 1040: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1060: #1060
+					end_run = True
+			if lap_direction == "CW":
+				if abs(relative_heading) > 1060: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1080: #1060
+					end_run = True
+			if lap_direction == "CCW":
+				if abs(relative_heading) > 1040: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1060: #1060
+					end_run = True
+		else:
+			if lap_direction is None:
+				if abs(relative_heading) > 1040: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1070: #1060
+					send_servo(82)
+					send_motor(1500)
+					break
+			if lap_direction == "CW":
+				if abs(relative_heading) > 1070: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1090: #1080
+					send_servo(82)
+					send_motor(1500)
+					break
+			if lap_direction == "CCW":
+				if abs(relative_heading) > 1070: #1040
+					end_run_count = True
+				if end_run_count == True:
+					end_run_counter += 1
+				if end_run_counter >= END_RUN_LIMIT and abs(relative_heading) > 1090: #1060
+					send_servo(82)
+					send_motor(1500)
+					break
 		frame = picam2.capture_array()  # RGB image
 		roiPillar = (0, 100, 640, 400)
 		pillar_crop = frame[roiPillar[1]:roiPillar[1]+roiPillar[3], roiPillar[0]:roiPillar[0]+roiPillar[2]]
 		hsv_frame = cv2.cvtColor(pillar_crop, cv2.COLOR_RGB2HSV) # CHANGE BACK TO RGB2HSV IF NESSCESARY 
-		lower_red = np.array([115, 150, 60]) # [115, 150, 70] # lab [0, 150, 60]
+		lower_red = np.array([115, 120, 60]) # [115, 150, 70] # lab [0, 150, 60]
 		upper_red = np.array([130, 255, 255]) #[150, 255, 255] # lab [60, 180, 80] (might want to change to [130, 255, 255])
 		mask_red = cv2.inRange(hsv_frame, lower_red, upper_red)
 		lower_green = np.array([30, 100, 0]) # [30, 120, 0] # lab [70, 85, 150]
 		upper_green = np.array([70, 255, 255]) # [70, 255, 255] # lab [100, 110 185]
 		mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
-		lower_pink = np.array([115, 150, 70]) #[130, 150, 70] lab [60, 160, 60]
+		lower_pink = np.array([135, 150, 70]) #[130, 150, 70] lab [60, 160, 60]
 		upper_pink = np.array([150, 255, 255])#[150, 255, 255] lab [90, 180, 90]
 		mask_pink = cv2.inRange(hsv_frame, lower_pink, upper_pink)
 		lower_yellow = np.array([75, 100, 100]) #[75, 100, 100] lab [125, 80, 110]
@@ -660,6 +720,10 @@ try:
 			active_cy = green_cy
 		else:
 			active_color = None
+		if DOYELLOW:
+			if yellow_area and yellow_area > MIN_REACT_AREA and active_color is not None:
+				active_cx = yellow_cx
+				active_cy = yellow_cy
 		#print(active_cy)
 		unread_packets = ser.in_waiting > 0
 		if read_lidar:
@@ -961,7 +1025,7 @@ try:
 					elif start_step == 15:
 						send_servo(82)
 						send_motor(1380)
-						sleep(1)
+						sleep(0.5)
 						send_motor(default_motor_value)
 						start_step = 16
 						continue
@@ -1329,7 +1393,8 @@ try:
 
 				
 				elapsed = now - (turn_enter_time if turn_enter_time is not None else now)
-
+				leftgone = leftArea <= 0
+				rightgone = rightArea <= 0
 				# Requirement (1): the side that became small must grow > 1000
 				if turn_trigger_side == "left":
 					grew_ok = leftArea > LEFT_EXIT_GROW_THRESH
@@ -1376,6 +1441,7 @@ try:
 										turn_side = "right"
 									
 								mode_change = False
+
 				else:
 					if (grew_ok and time_ok and balance_ok) or time_max:
 						mode = MODE_WALL_FOLLOW
@@ -1400,6 +1466,14 @@ try:
 								else:
 									send_servo(TURN_RIGHT_ANGLE)
 									turn_side = "right"
+						if leftgone:
+							turn_side = "left"
+							prev_turn_side = "left"
+							send_servo(TURN_LEFT_ANGLE)  # turn left
+						if rightgone:
+							send_servo(TURN_RIGHT_ANGLE)   # turn right
+							turn_side = "right"
+							prev_turn_side = "right"
 								
 							mode_change = False
 

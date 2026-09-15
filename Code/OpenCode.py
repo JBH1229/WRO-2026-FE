@@ -1,3 +1,8 @@
+import sys
+kickOverride = False
+AutoStart = True
+if len(sys.argv) > 1 and sys.argv[1] == "Debug":
+	AutoStart = False
 import cv2
 import numpy as np
 from picamera2 import Picamera2
@@ -21,6 +26,7 @@ time.sleep(2.0)
 # Clear anything the Arduino might have printed during boot
 servo_value = 82
 motor_value = 1500
+kick = False
 #set default values
 arduino.reset_input_buffer()
 arduino.reset_output_buffer()
@@ -42,6 +48,14 @@ TOGGLE_GYRO_TURN = False
 GYRO_TURN_VAL = 15
 relative_turn_heading = 0.0
 abs_turn_heading = 0.0
+LED_OFF = 0
+LED_RED = 1
+LED_GREEN = 2
+LED_BLUE = 3
+LED_YELLOW = 4
+LED_CYAN = 5
+LED_MAGENTA = 6
+LED_WHITE = 7
 #@log
 def send_servo(value):
     global servo_value
@@ -113,6 +127,14 @@ def send_motor_relative(value):
     valueb = bytes(str(value), encoding="utf-8")
     arduino.write(b"@M%b\n" %valueb)
     motor_value = value
+def send_led(value):
+    value = int(value)
+    if value < 0:
+        value = 0
+    if value > 7:
+        value = 7
+    valueb = bytes(str(value), encoding="utf-8")
+    arduino.write(b"@L%b\n" %valueb)
 def get_heading():
     arduino.write(b'@H\n')
 send_servo(servo_value)
@@ -129,8 +151,8 @@ sleep(0.5)
 turn_count = 0
 lap_count = 0
 # --- ROIs (x1, y1, x2, y2) ---
-ROI1 = [0, 200, 240, 300]     # Left ROI [0, 230, 240, 300] 
-ROI2 = [400, 200, 640, 300]    # Right ROI [400, 230, 640, 300]  
+ROI1 = [0, 240, 240, 300]     # Left ROI [0, 230, 240, 300] 
+ROI2 = [400, 240, 640, 300]    # Right ROI [400, 230, 640, 300]  
 
 def draw_roi(img, roi, color=(0, 255, 255), thickness=2, label=None):
     x1, y1, x2, y2 = roi
@@ -185,7 +207,7 @@ RIGHT_EXIT_GROW_THRESH  = 2500
 EXIT_TIME_SEC     = 0.5      # AND at least 10 seconds must pass since entry
 EXIT_TIME_THRESH = 2.0
 MAX_TIME_SEC 	  = 10.0
-TURN_LEFT_ANGLE   = 57 # change lower if nessassary
+TURN_LEFT_ANGLE   = 67 # change lower if nessassary
 TURN_RIGHT_ANGLE  = 107 # change higher if nessassary
 MAX_TURN_RATE = 40
 # --- Anti-false-trigger improvement ---
@@ -210,11 +232,26 @@ mode_change = True
 prev_error = 0
 last_time = time.monotonic()
 #start moving (motor start)
+send_led(LED_RED)
+sleep(1)
+send_led(LED_GREEN)
 print("waiting for button press...")
-#button.wait_for_press()
+button.wait_for_press()
+sleep(1)
+send_led(LED_WHITE)
 send_motor(WALL_FOLLOW_MOTOR_VALUE)
 try:
     while True:
+        kick = button.is_pressed
+        if not kickOverride:
+            if kick:
+                send_motor(1500)  # stop motor
+                send_servo(82)    # center steering
+                send_led(LED_OFF)
+                cv2.destroyAllWindows()
+                picam2.stop()
+                arduino.close()
+                break
         if turn_side == "left":
             relative_turn_heading = round(relative_heading-(turn_count*-90),2)
             abs_turn_heading = abs(relative_turn_heading)
@@ -422,8 +459,8 @@ try:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2, cv2.LINE_AA)
                 cv2.putText(frame, f"turn time: {elapsed:0.1f}s  exit if area>{LEFT_EXIT_GROW_THRESH} AND time>={EXIT_TIME_SEC}s",
                             (10, 125), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2, cv2.LINE_AA)
-
-            cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
+            if not AutoStart:
+                cv2.imshow("Wall Detect + Mode (Left/Right ROI)", frame)
 
             # Optional: show masks for tuning thresholds
             # cv2.imshow("Left ROI Mask", leftMask)
@@ -434,6 +471,7 @@ try:
 finally:
     send_motor(1500)  # stop motor
     send_servo(82)    # center steering
+    send_led(LED_OFF)
     cv2.destroyAllWindows()
     picam2.stop()
     arduino.close()
