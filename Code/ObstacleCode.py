@@ -21,6 +21,7 @@ from time import sleep
 import time
 import serial
 import struct
+import threading
 from gpiozero import Button
 #def log(func, *args):
 	#def logging_func(*args):
@@ -35,20 +36,21 @@ PACKET_HEADER = 0x54
 PACKET_LEN = 47
 read_lidar = True
 ser = serial.Serial(PORT, BAUD, timeout=0.1)
-buffer = bytearray()
-deg_0 = ""
 d_0 = [0, None, 0]
-deg_45 = ""
 d_45 = [45, None, 0]
-deg_90 = ""
 d_90 = [90, None, 0]
-deg_135 = ""
 d_135 = [135, None, 0]
-deg_180 = ""
 d_180 = [180, None, 0]
-unread_packets = True
-packets_read = 0
-max_packets = 5
+# Background LiDAR reader: A dedicated thread continuously
+# reads/parses the port and stores only the latest reading for each angle;
+# the main loop just copies whatever is current, never waiting on the port.
+lidar_lock = threading.Lock()
+_lidar_d_0 = [0, None, 0]
+_lidar_d_45 = [45, None, 0]
+_lidar_d_90 = [90, None, 0]
+_lidar_d_135 = [135, None, 0]
+_lidar_d_180 = [180, None, 0]
+lidar_running = True
 # LD19 CRC-8 table (standard LDROBOT checksum, poly 0x4D reflected)
 CRC_TABLE = [
 	0x00, 0x4d, 0x9a, 0xd7, 0x79, 0x34, 0xe3, 0xae, 0xf2, 0xbf, 0x68, 0x25, 0x8b, 0xc6, 0x11, 0x5c,
@@ -106,6 +108,45 @@ def interpolate_angles(start, end, count):
 	angle_range = (end - start + 360) % 360
 	step = angle_range / (count - 1)
 	return [(start + i * step) % 360 for i in range(count)]
+def lidar_worker():
+	# lidar reading thread function
+	global _lidar_d_0, _lidar_d_45, _lidar_d_90, _lidar_d_135, _lidar_d_180
+	local_buffer = bytearray()
+	while lidar_running:
+		try:
+			data = ser.read(256)
+		except Exception:
+			continue
+		if not data:
+			continue
+		local_buffer += data
+		while True:
+			idx = find_packet_start(local_buffer)
+			if idx == -1 or len(local_buffer) - idx < PACKET_LEN:
+				if idx == -1 and len(local_buffer) > PACKET_LEN * 4:
+					local_buffer = local_buffer[-(PACKET_LEN - 1):]
+				break
+			packet = local_buffer[idx:idx + PACKET_LEN]
+			local_buffer = local_buffer[idx + PACKET_LEN:]
+			parsed = parse_packet(packet)
+			if not parsed:
+				continue
+			angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
+			with lidar_lock:
+				for (dist, conf), angle in zip(parsed["points"], angles):
+					if conf > 0:
+						if abs(angle - 0.0) < 0.3:
+							_lidar_d_0 = [0, dist, conf]
+						if abs(angle - (360 - 45.0)) < 0.3:
+							_lidar_d_45 = [45, dist, conf]
+						if abs(angle - (360 - 90.0)) < 0.3:
+							_lidar_d_90 = [90, dist, conf]
+						if abs(angle - (360 - 135.0)) < 0.3:
+							_lidar_d_135 = [135, dist, conf]
+						if abs(angle - (360 - 180.0)) < 0.3:
+							_lidar_d_180 = [180, dist, conf]
+lidar_thread = threading.Thread(target=lidar_worker, daemon=True)
+lidar_thread.start()
 # --- Arduino init ---
 button = Button(5)
 arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
@@ -638,8 +679,6 @@ try:
 		#print(servo_value,motor_value, lap_count, turn_count, turn_side, imu_heading, starting_heading, relative_heading, end_run, end_run_counter)
 		if arduino.in_waiting > 0:
 			arduino.reset_input_buffer()  # Throw away unread data from Arduino
-		if ser.in_waiting > 0:
-			ser.reset_input_buffer()
 		if DOEND:
 			if lap_direction is None:
 				if abs(relative_heading) > 1040: #1040
@@ -725,49 +764,16 @@ try:
 				active_cx = yellow_cx
 				active_cy = yellow_cy
 		#print(active_cy)
-		unread_packets = ser.in_waiting > 0
 		if read_lidar:
-			while unread_packets:
-				data = ser.read(256)
-				unread_packets = ser.in_waiting > 0
-				packets_read += 1
-				if data:
-					buffer += data
-					while True:
-						idx = find_packet_start(buffer)
-						idx = find_packet_start(buffer)
-						if idx == -1 or len(buffer) - idx < PACKET_LEN:
-							break
-						packet = buffer[idx:idx+PACKET_LEN]
-						buffer = buffer[idx+PACKET_LEN:]
-						parsed = parse_packet(packet)
-						#print(f"data: {data}")
-						#print(f"buffer: {buffer}")
-						#print(f"packet: {packet}")
-						#print(f"parsed: {parsed}")
-						if parsed:
-							angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
-							#print(f"\nSpeed: {parsed['speed']:.2f} RPM | Timestamp: {parsed['timestamp']} ms")
-							for i, ((dist, conf), angle) in enumerate(zip(parsed["points"], angles)):
-								if conf > 0:
-									if abs(angle - 0.0) < 0.3: 
-										d_0 = [0, dist, conf]
-										deg_0 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-									if abs(angle - (360-45.0)) < 0.3:
-										d_45 = [45, dist, conf]
-										deg_45 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-									if abs(angle - (360-90.0)) < 0.3: 
-										d_90 = [90, dist, conf]
-										deg_90 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-									if abs(angle - (360-135.0)) < 0.3:
-										d_135 = [135, dist, conf]
-										deg_135 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-									if abs(angle - (360-180.0)) < 0.3:
-										d_180 = [180, dist, conf]
-										deg_180 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
-							
-						else:
-							print("Invalid packet")
+            # Cheap, non-blocking: just copy whatever the background reader
+            # thread has most recently parsed. No serial I/O and no packet
+            # parsing happens on this (the main) thread anymore.
+			with lidar_lock:
+				d_0 = list(_lidar_d_0)
+				d_45 = list(_lidar_d_45)
+				d_90 = list(_lidar_d_90)
+				d_135 = list(_lidar_d_135)
+				d_180 = list(_lidar_d_180)
 		#print(d_0, "\n", d_45, "\n", d_90, "\n", d_135, "\n", d_180, "\n")
 		#print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])ing from arduino
 		if time.time()-last_heading_time >= heading_interval:
@@ -1615,3 +1621,6 @@ finally:
 	cv2.destroyAllWindows()
 	picam2.stop()
 	arduino.close()
+	lidar_running = False
+	lidar_thread.join(timeout=1.0)
+	ser.close()
