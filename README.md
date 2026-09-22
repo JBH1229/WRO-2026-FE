@@ -248,6 +248,12 @@ A lot of the design decisions were based on the information and research done on
 
 A **more detailed breakdown** of our decisions can be found in our [Engineering Journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
 
+## Wheelbase
+The distance for our wheelbase was chosen to be shorter to help with agility, nmainly so our robot could take shaper and more concise turns if needed to. This especially helps with the obstacle challenge and proved to be beneficial during the suprise rule for nationals, where we had to navigate around an extra, yellow coloured, pillar. When you look at real life examples of cars with long wheelbases, such as F1 cars, it is noted that F1 cars also have a trouble with turning. One reason behind this is that having a longer wheelbase directly increases the turn radius of your car. A larger turn radius means wider turns and completely contrasts the goal for our autonomous robots.
+
+Learn about our robots turn radius in our engineering journal on page 12 [Engineering Journal](https://docs.google.com/document/d/1yOxLSaLgVKeupWdl-JZPw-9g1dGKT5EjSAjHi6xOg-0/edit?tab=t.0#heading=h.9aapqalinc39)
+
+
 ## Final Design
 Here are photos of our final design|
 
