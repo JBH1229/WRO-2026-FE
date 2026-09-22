@@ -10,11 +10,11 @@ PositionRequired = True
 ForceDefault = False
 DOYELLOW = False
 DOEND = False
-start_run = True
-end_run = False
+start_run = False
+end_run = True
 start_step = 1
 end_step = 1
-lap_direction = None # CHANGE BACK TO 'None' AFTER
+lap_direction = "CCW" # CHANGE BACK TO 'None' AFTER
 kick = False
 OverrideRed = True
 import cv2
@@ -383,6 +383,44 @@ def best_pillar(mask, isPink=False):
 	cy = y + h // 2
 	best = best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
 	return cx, cy, best_area, best
+def park_walls(mask):
+	kernel = np.ones((3, 3), np.uint8)
+	mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+	mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+	contours, _= cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	if contours == ():
+		return [None, None, 0, None], [None, None, 0, None]
+	best = None
+	best_area = 0
+	second_best = None
+	second_best_area = 0
+	for cnt in contours:
+		area = cv2.contourArea(cnt)
+		x,y,w,h = cv2.boundingRect(cnt)
+		cy = y+h//2
+		if area < MIN_NOISE_AREA:
+			continue
+		if cy <= MIN_PILLAR_Y:
+			continue
+		if area > best_area:
+			second_best_area = best_area
+			second_best = best
+			best_area = area
+			best = cnt
+			
+	if best is None or best_area < MIN_NOISE_AREA:
+		return [None, None, 0, None], [None, None, 0, None]
+	x, y, w, h = cv2.boundingRect(best)
+	cx = x + w // 2
+	cy = y + h // 2
+	best = best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
+	if second_best is None or second_best_area < MIN_NOISE_AREA:
+		return [cx, cy, best_area, best], [None, None, 0, None]
+	x2, y2, w2, h2 = cv2.boundingRect(second_best)
+	cx2 = x2 + w2 // 2
+	cy2 = y2 + h2 // 2
+	second_best = second_best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
+	return [cx, cy, best_area, best], [cx2, cy2, second_best_area, second_best]
 # --- LAB threshold for "black wall" (tune this!) ---
 LAB_BLACK_LOWER = np.array([0,   0,   0], dtype=np.uint8)
 LAB_BLACK_UPPER = np.array([70, 180, 255], dtype=np.uint8)
@@ -726,8 +764,8 @@ try:
 		lower_green = np.array([30, 100, 0]) # [30, 120, 0] # lab [70, 85, 150]
 		upper_green = np.array([70, 255, 255]) # [70, 255, 255] # lab [100, 110 185]
 		mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
-		lower_pink = np.array([135, 150, 70]) #[130, 150, 70] lab [60, 160, 60]
-		upper_pink = np.array([150, 255, 255])#[150, 255, 255] lab [90, 180, 90]
+		lower_pink = np.array([135, 175, 0]) #[135, 150, 70] lab [60, 160, 60] [130, 175, 0]
+		upper_pink = np.array([155, 255, 255])#[150, 255, 255] lab [90, 180, 90] [155, 255, 255]
 		mask_pink = cv2.inRange(hsv_frame, lower_pink, upper_pink)
 		lower_yellow = np.array([75, 100, 100]) #[75, 100, 100] lab [125, 80, 110]
 		upper_yellow = np.array([95, 255, 255])#[95, 255, 255] lab [170, 100, 130]
@@ -736,6 +774,8 @@ try:
 		green_cx, green_cy, green_area, green_contour = best_pillar(mask_green)
 		yellow_cx, yellow_cy, yellow_area, yellow_contour = best_pillar(mask_yellow)
 		pink_cx, pink_cy, pink_area, pink_contour = best_pillar(mask_pink, isPink=True)
+		if end_run:
+			wall1, wall2 = park_walls(mask_pink)
 		if red_area > green_area and red_area > MIN_REACT_AREA:
 			active_color = "red"
 			active_cx = red_cx
@@ -1138,15 +1178,18 @@ try:
 						print("i cant see!")
 						continue
 					if end_step == 1:
-						target_end = 350
+						target_end = 500
 						wall_follow_exit_counter = 0
 						pink_counter = 0
 						Pink_seen = False
+						prev_d = 0
 						send_motor(1620)
 						end_step = 2
 						continue
 					if end_step == 2:
 						error_end = d_0[0] - target_end
+						if error_end < 0:
+							error_end*5
 						error_trig = d_45[0] - d_0[0]*1.414
 						end_correction = ((kp_end*error_end)+(kp_end*error_trig)/1.2)/2
 						print(f"{d_0[1]}, {d_45[1]}, {error_end}, {error_trig}, {kp_end*error_end}+{kp_end*error_trig/2}/2={end_correction}")
@@ -1156,19 +1199,19 @@ try:
 						else:
 							end_correction = max(end_correction, -40)
 						send_servo_assigned(end_correction)
+						prev_d = d_0[0]
 						if pink_area > 1000:
 							pink_counter = pink_counter + 1
 						if pink_counter > 30:
 							Pink_seen = True
 						if Pink_seen:
-							if d_180[0] == None or d_210[0] == None or d_180[0] == 0 or d_210[0] == 0 or d_180[0] > 2000 or d_210[0] > 2000:
-								continue
 							if abs(error_trig) > 25:
+								continue
+							if d_90[0] > 1200:
 								continue
 							send_servo(82)
 							send_motor(1500)
-							sleep(3)
-							send_servo(82)
+							sleep(0.5)
 							send_motor(1620)
 							end_step = 3
 							continue
@@ -1178,25 +1221,86 @@ try:
 							continue
 						else:
 							send_motor(1500)
-							end_step = 5
+							end_step = 4
+					if end_step == 4:
+						send_servo(40)
+						send_motor(1390)
+						sleep(1.2)
+						send_servo(82)
+						send_motor(1500)
+						sleep(0.5)
+						end_step = 5
 					if end_step == 5:
-						sleep(10)
+						send_motor(1620)
+						if wall2[0] is None:
+							print("no wall(s)")
+							send_servo(82)
+							continue
+						average_cx = (wall1[0] + wall2[0]) / 2
+						average_cy = (wall1[1] + wall2[1]) / 2
+						wall_error = average_cx - 350
+						distance_correction = average_cy/350
+						wall_correction = wall_error*distance_correction
+						if wall_correction > 0:
+							wall_correction = min(wall_correction, 40)
+						else:
+							wall_correction = max(wall_correction, -40)
+						print(wall1[0], wall2[0], average_cx, wall_error, wall_correction)
+						send_servo_assigned(wall_correction)
+						if d_90[0] < 400:
+							end_step = 7
+					if end_step == 6:
+						send_servo(120)
+						send_motor(1620)
+						sleep(0.5)
+						send_motor(1500)
+						send_servo(82)
+						sleep(0.5)
+						send_motor(1620)
+						sleep(0.1)
+						send_motor(1500)
+						send_servo(82)
+						sleep(0.5)
+						send_servo(30)
+						send_motor(1620)
+						sleep(0.5)
+						send_motor(1500)
+						send_servo(82)
+						sleep(0.5)
+						end_step = 7
+					if end_step == 7:
+						send_motor(1620)
+						print(d_90[0])
+						if d_90[0] > 120:
+							continue
+						send_motor(1500)
+						send_servo(30)
+						sleep(0.5)
+						send_motor(1620)
+						end_step = 8
+					if end_step == 8:
+						print(d_135[0])
+						if d_135[0] > 100:
+							continue
+						send_servo(120)
+						send_motor(1500)
 						sleep(0.5)
 						send_motor(1390)
-						send_servo(67)
-						sleep(1.2)
-						send_motor(1500)
-						sleep(0.2)
-						send_servo(107)
-						send_motor(1620)
-						sleep(1.5)
-						send_motor(1500)
-						sleep(0.2)
-						send_servo(57)
-						send_motor(1620)
-						sleep(1.5)
-						
-						break
+						exit_count = 0
+						end_step = 9
+					if end_step == 9:
+						print(d_90[0])
+						if d_90[0] < 100:
+							continue
+						if d_90[0] == 0:
+							continue
+						exit_count = exit_count+1
+						if exit_count > 5:
+							send_motor(1500)
+							send_servo(82)
+							sleep(0.5)
+							break
+						continue
 				#parallel parking code
 		else:
 			read_lidar = False
