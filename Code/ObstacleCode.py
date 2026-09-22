@@ -10,11 +10,11 @@ PositionRequired = True
 ForceDefault = False
 DOYELLOW = False
 DOEND = False
-start_run = False
-end_run = True
+start_run = True
+end_run = False
 start_step = 1
 end_step = 1
-lap_direction = "CCW" # CHANGE BACK TO 'None' AFTER
+lap_direction = None # CHANGE BACK TO 'None' AFTER
 kick = False
 OverrideRed = True
 import cv2
