@@ -1171,7 +1171,7 @@ try:
 						end_step = 4
 					if end_step == 4:
 						print(d_135[0])
-						if d_135[0] > 90:
+						if d_135[0] > 100:
 							continue
 						send_servo(120)
 						send_motor(1500)
@@ -1181,9 +1181,7 @@ try:
 						end_step = 5
 					if end_step == 5:
 						print(d_90[0])
-						if d_90[0] < 90:
-							continue
-						if d_90[0] == 0:
+						if d_180[0] < 500:
 							continue
 						exit_count = exit_count+1
 						if exit_count > 5:
@@ -1309,9 +1307,7 @@ try:
 						end_step = 9
 					if end_step == 9:
 						print(d_90[0])
-						if d_90[0] < 100:
-							continue
-						if d_90[0] == 0:
+						if d_180[0] < 500:
 							continue
 						exit_count = exit_count+1
 						if exit_count > 5:
