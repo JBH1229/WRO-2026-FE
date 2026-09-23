@@ -1128,51 +1128,70 @@ try:
 						print("i cant see!")
 						continue
 					if end_step == 1:
-						target_end = 500
-						wall_follow_exit_counter = 0
-						Pink_seen = False
-						send_motor(1392)
+						send_servo(40)
+						send_motor(1620)
+						sleep(2)
+						send_servo(82)
+						send_motor(1500)
+						sleep(0.5)
+						send_motor(1390)
+						sleep(1)
+						send_motor(1500)
+						sleep(0.5)
 						end_step = 2
 						continue
 					if end_step == 2:
-						error_end = -(d_180[0] - target_end)
-						error_trig = d_135[0] - d_180[0]*1.414
-						end_correction = ((kp_end*error_end)+(kp_end*error_trig)/1.414)/2
-						#print(f"{d_0[1]}, {d_45[1]}, {error_end}, {error_trig}, {kp_end*error_end}+{kp_end*error_trig/2}/2={end_correction}")
-						print(pink_area, pink_cy, Pink_seen)
-						if end_correction > 0:
-							end_correction = min(end_correction, 40)
-						else:
-							end_correction = max(end_correction, -40)
-						send_servo_assigned(end_correction)
-						if wall_follow_exit_counter > 10:
-							send_motor(1500)
-							end_step = 3
-							continue
-						if pink_area > 0:
-							wall_follow_exit_counter = wall_follow_exit_counter + 1
-						continue
-					if end_step == 3:
-						send_servo(82)
-						send_motor(1622)
-						end_step = 4
-						continue
-					if end_step == 4:
-						if pink_cy == None:
-							continue
-						else:
-							sleep(2)
-							send_motor(1500)
-							end_step = 5
-							continue
-					if end_step == 5:
-						send_servo(50)
 						send_motor(1620)
-						sleep(3.5)
+						if wall2[0] is None:
+							print("no wall(s)")
+							send_servo(82)
+							continue
+						average_cx = (wall1[0] + wall2[0]) / 2
+						average_cy = (wall1[1] + wall2[1]) / 2
+						wall_error = average_cx - 300
+						distance_correction = average_cy/350
+						wall_correction = wall_error*distance_correction
+						if wall_correction > 0:
+							wall_correction = min(wall_correction, 40)
+						else:
+							wall_correction = max(wall_correction, -40)
+						print(wall1[0], wall2[0], average_cx, wall_error, wall_correction)
+						send_servo_assigned(wall_correction)
+						if d_90[0] < 400:
+							end_step = 3
+					if end_step == 3:
+						send_motor(1620)
+						print(d_90[0])
+						if d_90[0] > 120:
+							continue
 						send_motor(1500)
-						send_servo(82)
-						break
-						
+						send_servo(30)
+						sleep(0.5)
+						send_motor(1620)
+						end_step = 4
+					if end_step == 4:
+						print(d_135[0])
+						if d_135[0] > 90:
+							continue
+						send_servo(120)
+						send_motor(1500)
+						sleep(0.5)
+						send_motor(1390)
+						exit_count = 0
+						end_step = 5
+					if end_step == 5:
+						print(d_90[0])
+						if d_90[0] < 90:
+							continue
+						if d_90[0] == 0:
+							continue
+						exit_count = exit_count+1
+						if exit_count > 5:
+							send_motor(1500)
+							send_servo(82)
+							sleep(0.5)
+							break
+						continue
 				else:
 					if d_0[0] == None or d_45[0] == None:
 						print("i cant see!")
