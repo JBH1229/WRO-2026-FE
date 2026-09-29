@@ -1,4 +1,4 @@
-# TO DO: ADD STEERING VIA LIDAR ON THE WAY BACK DURING PARALLEL PARKING (after using lidar going forward, use lidar going backward to make sure the robot is straight)
+# MAIN ISSUE: PILLAR AVOID LITERALLY JUST WONT END IN GREEN LIGHT RECOVERY MODE BEFORE RECOVERY MODE STARTS
 import sys
 kickOverride = False
 DebugMode = False
@@ -9,12 +9,9 @@ ColorBias = True
 PositionRequired = True
 ForceDefault = False
 DOYELLOW = False
-DOEND = True
-start_run = True
+DOEND = False
+start_run = False
 end_run = False
-start_step = 1
-end_step = 1
-lap_direction = None # CHANGE BACK TO 'None' AFTER
 kick = False
 OverrideRed = True
 import cv2
@@ -24,8 +21,6 @@ from time import sleep
 import time
 import serial
 import struct
-import threading
-import math 
 from gpiozero import Button
 #def log(func, *args):
 	#def logging_func(*args):
@@ -40,21 +35,20 @@ PACKET_HEADER = 0x54
 PACKET_LEN = 47
 read_lidar = True
 ser = serial.Serial(PORT, BAUD, timeout=0.1)
-d_0 = [None, 0]
-d_45 = [None, 0]
-d_90 = [None, 0]
-d_135 = [None, 0]
-d_180 = [None, 0]
-# Background LiDAR reader: A dedicated thread continuously
-# reads/parses the port and stores only the latest reading for each angle;
-# the main loop just copies whatever is current, never waiting on the port.
-lidar_lock = threading.Lock()
-_lidar_d_0 = [None, 0]
-_lidar_d_45 = [None, 0]
-_lidar_d_90 = [None, 0]
-_lidar_d_135 = [None, 0]
-_lidar_d_180 = [None, 0]
-lidar_running = True
+buffer = bytearray()
+deg_0 = ""
+d_0 = [0, None, 0]
+deg_45 = ""
+d_45 = [45, None, 0]
+deg_90 = ""
+d_90 = [90, None, 0]
+deg_135 = ""
+d_135 = [135, None, 0]
+deg_180 = ""
+d_180 = [180, None, 0]
+unread_packets = True
+packets_read = 0
+max_packets = 5
 # LD19 CRC-8 table (standard LDROBOT checksum, poly 0x4D reflected)
 CRC_TABLE = [
 	0x00, 0x4d, 0x9a, 0xd7, 0x79, 0x34, 0xe3, 0xae, 0xf2, 0xbf, 0x68, 0x25, 0x8b, 0xc6, 0x11, 0x5c,
@@ -112,46 +106,6 @@ def interpolate_angles(start, end, count):
 	angle_range = (end - start + 360) % 360
 	step = angle_range / (count - 1)
 	return [(start + i * step) % 360 for i in range(count)]
-def lidar_worker():
-	# lidar reading thread function
-	global _lidar_d_0, _lidar_d_45, _lidar_d_90, _lidar_d_135, _lidar_d_180
-	local_buffer = bytearray()
-	while lidar_running:
-		try:
-			data = ser.read(256)
-		except Exception:
-			continue
-		if not data:
-			continue
-		local_buffer += data
-		while True:
-			idx = find_packet_start(local_buffer)
-			if idx == -1 or len(local_buffer) - idx < PACKET_LEN:
-				if idx == -1 and len(local_buffer) > PACKET_LEN * 4:
-					local_buffer = local_buffer[-(PACKET_LEN - 1):]
-				break
-			packet = local_buffer[idx:idx + PACKET_LEN]
-			local_buffer = local_buffer[idx + PACKET_LEN:]
-			parsed = parse_packet(packet)
-			if not parsed:
-				continue
-			angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
-			with lidar_lock:
-				for (dist, conf), angle in zip(parsed["points"], angles):
-					if conf > 0:
-						if abs(angle - 0.0) < 0.3:
-							_lidar_d_0 = [dist, conf]
-						if abs(angle - 45.0) < 0.3:
-							_lidar_d_45 = [dist, conf]
-						if abs(angle -90.0) < 0.3:
-							_lidar_d_90 = [dist, conf]
-						if abs(angle - 135.0) < 0.3:
-							_lidar_d_135 = [dist, conf]
-						if abs(angle - 180.0) < 0.3:
-							_lidar_d_180 = [dist, conf]
-							
-lidar_thread = threading.Thread(target=lidar_worker, daemon=True)
-lidar_thread.start()
 # --- Arduino init ---
 button = Button(5)
 arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
@@ -189,17 +143,18 @@ GYRO_TURN_VAL = 15
 relative_turn_heading = 0.0
 abs_turn_heading = 0.0
 MIN_NOISE_AREA = 300
-MIN_REACT_AREA = 1000
+MIN_REACT_AREA = 700
 MIN_PILLAR_Y = 100
 MAX_PILLAR_Y = 250
 RED_TARGET_CX = 90
-GREEN_TARGET_CX = 550
+GREEN_TARGET_CX = 570
 PILLAR_EXIT_FRAMES = 5
 recovery_mode = False
 distance_error = 1
 offbalance = 0
 MAX_OFFREAD = 1000
 highest_heading = 0
+lap_direction = None # CHANGE BACK TO 'None' AFTER
 lap_margin = 30
 target_cx = 0
 prev_red = False
@@ -210,6 +165,8 @@ LIGHT_RECOVERY = 0
 NORMAL_RECOVERY = 1
 HEAVY_RECOVERY = 2
 recovery_type = NORMAL_RECOVERY
+start_step = 1
+end_step = 1
 LEFT = 1
 RIGHT = 2
 orientation = 0
@@ -399,44 +356,6 @@ def best_pillar(mask, isPink=False):
 	cy = y + h // 2
 	best = best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
 	return cx, cy, best_area, best
-def park_walls(mask):
-	kernel = np.ones((3, 3), np.uint8)
-	mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
-	mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-	contours, _= cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-	if contours == ():
-		return [None, None, 0, None], [None, None, 0, None]
-	best = None
-	best_area = 0
-	second_best = None
-	second_best_area = 0
-	for cnt in contours:
-		area = cv2.contourArea(cnt)
-		x,y,w,h = cv2.boundingRect(cnt)
-		cy = y+h//2
-		if area < MIN_NOISE_AREA:
-			continue
-		if cy <= MIN_PILLAR_Y:
-			continue
-		if area > best_area:
-			second_best_area = best_area
-			second_best = best
-			best_area = area
-			best = cnt
-			
-	if best is None or best_area < MIN_NOISE_AREA:
-		return [None, None, 0, None], [None, None, 0, None]
-	x, y, w, h = cv2.boundingRect(best)
-	cx = x + w // 2
-	cy = y + h // 2
-	best = best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
-	if second_best is None or second_best_area < MIN_NOISE_AREA:
-		return [cx, cy, best_area, best], [None, None, 0, None]
-	x2, y2, w2, h2 = cv2.boundingRect(second_best)
-	cx2 = x2 + w2 // 2
-	cy2 = y2 + h2 // 2
-	second_best = second_best + np.array([[[roiPillar[0], roiPillar[1]]]], dtype=np.int32)
-	return [cx, cy, best_area, best], [cx2, cy2, second_best_area, second_best]
 # --- LAB threshold for "black wall" (tune this!) ---
 LAB_BLACK_LOWER = np.array([0,   0,   0], dtype=np.uint8)
 LAB_BLACK_UPPER = np.array([70, 180, 255], dtype=np.uint8)
@@ -510,7 +429,6 @@ regain_control = True
 go_around = False
 left_turn = TURN_LEFT_ANGLE + RECOVERY_CORRECTION
 right_turn = TURN_RIGHT_ANGLE - RECOVERY_CORRECTION
-first_time = True
 def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 	global active_color
 	global middle_seen
@@ -576,8 +494,12 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 				leeway = 0
 			time_good = time_thresh > (MIN_RECOVERY_TIME-leeway)
 			time_out = time_thresh > MAX_RECOVERY_TIME
-			left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION + last_x*0.001)
-			right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION + last_x*0.001)
+			if not (lap_direction == "CCW" and prev_red):
+				left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION + last_x*0.001)
+				right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION + last_x*0.001)
+			else:
+				left_turn = TURN_LEFT_ANGLE + (RECOVERY_CORRECTION)
+				right_turn = TURN_RIGHT_ANGLE - (RECOVERY_CORRECTION)
 		if recovery_type == LIGHT_RECOVERY:
 			# light recovery steps
 			past_pillar = active_color == None
@@ -708,18 +630,20 @@ try:
 		kick = button.is_pressed
 		if not kickOverride:
 			if kick:
-				lidar_running = False
-				lidar_thread.join(timeout=1.0)
+				send_led(LED_RED)
 				send_motor(default_motor_value)  # stop motor
 				send_servo(default_servo_value)    # center steering
+				sleep(0.5)
 				send_led(LED_OFF)
 				cv2.destroyAllWindows()
 				picam2.stop()
 				arduino.close()
-				ser.close()
+				break
 		#print(servo_value,motor_value, lap_count, turn_count, turn_side, imu_heading, starting_heading, relative_heading, end_run, end_run_counter)
 		if arduino.in_waiting > 0:
 			arduino.reset_input_buffer()  # Throw away unread data from Arduino
+		if ser.in_waiting > 0:
+			ser.reset_input_buffer()
 		if DOEND:
 			if lap_direction is None:
 				if abs(relative_heading) > 1040: #1040
@@ -774,14 +698,14 @@ try:
 		roiPillar = (0, 100, 640, 400)
 		pillar_crop = frame[roiPillar[1]:roiPillar[1]+roiPillar[3], roiPillar[0]:roiPillar[0]+roiPillar[2]]
 		hsv_frame = cv2.cvtColor(pillar_crop, cv2.COLOR_RGB2HSV) # CHANGE BACK TO RGB2HSV IF NESSCESARY 
-		lower_red = np.array([110, 120, 60]) # [115, 150, 70] # lab [0, 150, 60]     110 120 60
-		upper_red = np.array([120, 255, 255]) #[150, 255, 255] # lab [60, 180, 80] (might want to change to [130, 255, 255]) 
+		lower_red = np.array([115, 120, 60]) # [115, 150, 70] # lab [0, 150, 60]
+		upper_red = np.array([130, 255, 255]) #[150, 255, 255] # lab [60, 180, 80] (might want to change to [130, 255, 255])
 		mask_red = cv2.inRange(hsv_frame, lower_red, upper_red)
-		lower_green = np.array([40, 100, 50]) # [30, 120, 0] # lab [70, 85, 150] # 40 , 100 50
-		upper_green = np.array([75, 255, 255]) # [70, 255, 255] # lab [100, 110 185] 75 255 255
+		lower_green = np.array([30, 100, 0]) # [30, 120, 0] # lab [70, 85, 150]
+		upper_green = np.array([70, 255, 255]) # [70, 255, 255] # lab [100, 110 185]
 		mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
-		lower_pink = np.array([120, 175, 0]) #[135, 150, 70] lab [60, 160, 60] [130, 175, 0]
-		upper_pink = np.array([155, 255, 255])#[150, 255, 255] lab [90, 180, 90] [155, 255, 255]
+		lower_pink = np.array([135, 150, 70]) #[130, 150, 70] lab [60, 160, 60]
+		upper_pink = np.array([150, 255, 255])#[150, 255, 255] lab [90, 180, 90]
 		mask_pink = cv2.inRange(hsv_frame, lower_pink, upper_pink)
 		lower_yellow = np.array([75, 100, 100]) #[75, 100, 100] lab [125, 80, 110]
 		upper_yellow = np.array([95, 255, 255])#[95, 255, 255] lab [170, 100, 130]
@@ -790,8 +714,6 @@ try:
 		green_cx, green_cy, green_area, green_contour = best_pillar(mask_green)
 		yellow_cx, yellow_cy, yellow_area, yellow_contour = best_pillar(mask_yellow)
 		pink_cx, pink_cy, pink_area, pink_contour = best_pillar(mask_pink, isPink=True)
-		if end_run:
-			wall1, wall2 = park_walls(mask_pink)
 		if red_area > green_area and red_area > MIN_REACT_AREA:
 			active_color = "red"
 			active_cx = red_cx
@@ -807,37 +729,50 @@ try:
 				active_cx = yellow_cx
 				active_cy = yellow_cy
 		#print(active_cy)
+		unread_packets = ser.in_waiting > 0
 		if read_lidar:
-			"""
-			if first_time:
-				blind_spot = False
-				blind_start = -1
-				blind_end = -1
-				first_time = False
-			"""
-            # Cheap, non-blocking: just copy whatever the background reader
-            # thread has most recently parsed. No serial I/O and no packet
-            # parsing happens on this (the main) thread anymore.
-			with lidar_lock:
-				"""
-				for i in range(len(lidar_data)):
-					if not blind_spot:
-						if lidar_data[i][0] < 100:
-							blind_spot = True
-							blind_start = i
-					else:
-						if lidar_data[i][0] > 100:
-							blind_spot = False
-							blind_end = i
-					print(i, lidar_data[i][0])
-					print(blind_start, blind_end)
-				continue
-				"""
-				d_0 = list(_lidar_d_0)
-				d_45 = list(_lidar_d_45)
-				d_90 = list(_lidar_d_90)
-				d_135 = list(_lidar_d_135)
-				d_180 = list(_lidar_d_180)
+			while unread_packets:
+				data = ser.read(256)
+				unread_packets = ser.in_waiting > 0
+				packets_read += 1
+				if data:
+					buffer += data
+					while True:
+						idx = find_packet_start(buffer)
+						idx = find_packet_start(buffer)
+						if idx == -1 or len(buffer) - idx < PACKET_LEN:
+							break
+						packet = buffer[idx:idx+PACKET_LEN]
+						buffer = buffer[idx+PACKET_LEN:]
+						parsed = parse_packet(packet)
+						#print(f"data: {data}")
+						#print(f"buffer: {buffer}")
+						#print(f"packet: {packet}")
+						#print(f"parsed: {parsed}")
+						if parsed:
+							angles = interpolate_angles(parsed["start_angle"], parsed["end_angle"], 12)
+							#print(f"\nSpeed: {parsed['speed']:.2f} RPM | Timestamp: {parsed['timestamp']} ms")
+							for i, ((dist, conf), angle) in enumerate(zip(parsed["points"], angles)):
+								if conf > 0:
+									if abs(angle - 0.0) < 0.3: 
+										d_0 = [0, dist, conf]
+										deg_0 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+									if abs(angle - (360-45.0)) < 0.3:
+										d_45 = [45, dist, conf]
+										deg_45 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+									if abs(angle - (360-90.0)) < 0.3: 
+										d_90 = [90, dist, conf]
+										deg_90 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+									if abs(angle - (360-135.0)) < 0.3:
+										d_135 = [135, dist, conf]
+										deg_135 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+									if abs(angle - (360-180.0)) < 0.3:
+										d_180 = [180, dist, conf]
+										deg_180 = f"  Pt {i+1:02d}: {angle:.2f}  {dist} mm  (conf: {conf})"
+							
+						else:
+							print("Invalid packet")
+		#print(d_0, "\n", d_45, "\n", d_90, "\n", d_135, "\n", d_180, "\n")
 		#print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])ing from arduino
 		if time.time()-last_heading_time >= heading_interval:
 			get_heading()
@@ -884,10 +819,10 @@ try:
 				#print(d_0, d_45, d_90, d_135, d_180)
 				if orientation == 0:
 					read_lidar = True
-					if (d_0[0] is None) or (d_180[0] is None):
+					if (d_0[1] is None) or (d_180[1] is None):
 						continue
 					#print(d_0[1], d_180[1], d_0[2], d_180[2])
-					if d_0[0] > d_180[0]:
+					if d_0[1] > d_180[1]:
 						orientation = LEFT
 						#180 degrees is closer robot is facing left (CW)
 					else:
@@ -1102,202 +1037,112 @@ try:
 						start_run = False
 						continue
 			else:
-				#print(d_0, d_45)
+				print(d_0, d_45)
 				kp_end = 0.25
 				read_lidar = True
 				if lap_direction == "CW":
-					if d_180[0] == None or d_135[0] == None:
-						print("i cant see!")
-						continue
-					if end_step == 1:
-						send_servo(40)
-						send_motor(1620)
-						sleep(2)
-						send_servo(82)
-						send_motor(1500)
-						sleep(0.5)
-						send_motor(1390)
-						sleep(1)
-						send_motor(1500)
-						sleep(0.5)
-						end_step = 2
-						continue
-					if end_step == 2:
-						send_motor(1620)
-						if wall2[0] is None:
-							print("no wall(s)")
-							send_servo(82)
-							continue
-						average_cx = (wall1[0] + wall2[0]) / 2
-						average_cy = (wall1[1] + wall2[1]) / 2
-						wall_error = average_cx - 300
-						distance_correction = average_cy/350
-						wall_correction = wall_error*distance_correction
-						if wall_correction > 0:
-							wall_correction = min(wall_correction, 40)
-						else:
-							wall_correction = max(wall_correction, -40)
-						print(wall1[0], wall2[0], average_cx, wall_error, wall_correction)
-						send_servo_assigned(wall_correction)
-						if d_90[0] < 400:
-							end_step = 3
-					if end_step == 3:
-						send_motor(1620)
-						print(d_90[0])
-						if d_90[0] > 120:
-							continue
-						send_motor(1500)
-						send_servo(30)
-						sleep(0.5)
-						send_motor(1620)
-						end_step = 4
-					if end_step == 4:
-						print(d_135[0])
-						if d_135[0] > 100:
-							continue
-						send_servo(120)
-						send_motor(1500)
-						sleep(0.5)
-						send_motor(1390)
-						exit_count = 0
-						end_step = 5
-					if end_step == 5:
-						print(d_90[0])
-						if d_180[0] < 500:
-							continue
-						exit_count = exit_count+1
-						if exit_count > 5:
-							send_motor(1500)
-							send_servo(82)
-							sleep(0.5)
-							break
-						continue
-				else:
-					if d_0[0] == None or d_45[0] == None:
+					if d_180[1] == None or d_135[1] == None:
 						print("i cant see!")
 						continue
 					if end_step == 1:
 						target_end = 500
 						wall_follow_exit_counter = 0
-						pink_counter = 0
 						Pink_seen = False
-						prev_d = 0
-						send_motor(1620)
+						send_motor(1392)
 						end_step = 2
 						continue
 					if end_step == 2:
-						error_end = d_0[0] - target_end
-						if error_end < 0:
-							error_end*5
-						error_trig = d_45[0] - d_0[0]*1.414
-						end_correction = ((kp_end*error_end)+(kp_end*error_trig)/1.2)/2
-						print(f"{d_0[1]}, {d_45[1]}, {error_end}, {error_trig}, {kp_end*error_end}+{kp_end*error_trig/2}/2={end_correction}")
+						error_end = -(d_180[1] - target_end)
+						error_trig = d_135[1] - d_180[1]*1.414
+						end_correction = ((kp_end*error_end)+(kp_end*error_trig)/1.414)/2
+						#print(f"{d_0[1]}, {d_45[1]}, {error_end}, {error_trig}, {kp_end*error_end}+{kp_end*error_trig/2}/2={end_correction}")
 						print(pink_area, pink_cy, Pink_seen)
 						if end_correction > 0:
 							end_correction = min(end_correction, 40)
 						else:
 							end_correction = max(end_correction, -40)
 						send_servo_assigned(end_correction)
-						prev_d = d_0[0]
-						if pink_area > 1000:
-							pink_counter = pink_counter + 1
-						if pink_counter > 30:
-							Pink_seen = True
-						if Pink_seen:
-							if abs(error_trig) > 25:
-								continue
-							if d_90[0] > 1200:
-								continue
-							send_servo(82)
+						if wall_follow_exit_counter > 10:
 							send_motor(1500)
-							sleep(0.5)
-							send_motor(1620)
 							end_step = 3
 							continue
+						if pink_area > 0:
+							wall_follow_exit_counter = wall_follow_exit_counter + 1
 						continue
 					if end_step == 3:
-						if d_90[0] > 900:
-							continue
-						else:
-							send_motor(1500)
-							end_step = 4
-					if end_step == 4:
-						send_servo(40)
-						send_motor(1390)
-						sleep(1.2)
 						send_servo(82)
-						send_motor(1500)
-						sleep(0.5)
-						end_step = 5
-					if end_step == 5:
-						send_motor(1620)
-						if wall2[0] is None:
-							print("no wall(s)")
-							send_servo(82)
-							continue
-						average_cx = (wall1[0] + wall2[0]) / 2
-						average_cy = (wall1[1] + wall2[1]) / 2
-						wall_error = average_cx - 350
-						distance_correction = average_cy/350
-						wall_correction = wall_error*distance_correction
-						if wall_correction > 0:
-							wall_correction = min(wall_correction, 40)
-						else:
-							wall_correction = max(wall_correction, -40)
-						print(wall1[0], wall2[0], average_cx, wall_error, wall_correction)
-						send_servo_assigned(wall_correction)
-						if d_90[0] < 400:
-							end_step = 7
-					if end_step == 6:
-						send_servo(120)
-						send_motor(1620)
-						sleep(0.5)
-						send_motor(1500)
-						send_servo(82)
-						sleep(0.5)
-						send_motor(1620)
-						sleep(0.1)
-						send_motor(1500)
-						send_servo(82)
-						sleep(0.5)
-						send_servo(30)
-						send_motor(1620)
-						sleep(0.5)
-						send_motor(1500)
-						send_servo(82)
-						sleep(0.5)
-						end_step = 7
-					if end_step == 7:
-						send_motor(1620)
-						print(d_90[0])
-						if d_90[0] > 120:
-							continue
-						send_motor(1500)
-						send_servo(30)
-						sleep(0.5)
-						send_motor(1620)
-						end_step = 8
-					if end_step == 8:
-						print(d_135[0])
-						if d_135[0] > 100:
-							continue
-						send_servo(120)
-						send_motor(1500)
-						sleep(0.5)
-						send_motor(1390)
-						exit_count = 0
-						end_step = 9
-					if end_step == 9:
-						print(d_90[0])
-						if d_180[0] < 500:
-							continue
-						exit_count = exit_count+1
-						if exit_count > 5:
-							send_motor(1500)
-							send_servo(82)
-							sleep(0.5)
-							break
+						send_motor(1622)
+						end_step = 4
 						continue
+					if end_step == 4:
+						if pink_cy == None:
+							continue
+						else:
+							sleep(2)
+							send_motor(1500)
+							end_step = 5
+							continue
+					if end_step == 5:
+						send_servo(50)
+						send_motor(1620)
+						sleep(3.5)
+						send_motor(1500)
+						send_servo(82)
+						break
+						
+				else:
+					if d_0[1] == None or d_45[1] == None:
+						print("i cant see!")
+						continue
+					if end_step == 1:
+						target_end = 350
+						wall_follow_exit_counter = 0
+						Pink_seen = False
+						send_motor(1620)
+						end_step = 2
+						continue
+					if end_step == 2:
+						error_end = d_0[1] - target_end
+						error_trig = d_45[1] - d_0[1]*1.414
+						end_correction = ((kp_end*error_end)+(kp_end*error_trig)/1.414)/2
+						#print(f"{d_0[1]}, {d_45[1]}, {error_end}, {error_trig}, {kp_end*error_end}+{kp_end*error_trig/2}/2={end_correction}")
+						print(pink_area, pink_cy, Pink_seen)
+						if end_correction > 0:
+							end_correction = min(end_correction, 40)
+						else:
+							end_correction = max(end_correction, -40)
+						send_servo_assigned(end_correction)
+						if wall_follow_exit_counter > 15:
+							send_motor(1500)
+							end_step = 3
+							continue
+						if pink_area > 0:
+							Pink_seen = True
+						if Pink_seen:
+							if pink_cy == None:
+								wall_follow_exit_counter = wall_follow_exit_counter + 1
+								continue
+						continue
+					if end_step == 3:
+						send_servo(82)
+						send_motor(1390)
+						end_step = 4
+						continue
+					if end_step == 4:
+						if pink_cy == None:
+							continue
+						else:
+							sleep(1)
+							send_motor(1500)
+							end_step = 5
+							continue
+					if end_step == 5:
+						send_servo(115)
+						send_motor(1620)
+						sleep(3.5)
+						send_motor(1500)
+						send_servo(82)
+						break
 				#parallel parking code
 		else:
 			read_lidar = False
@@ -1490,7 +1335,10 @@ try:
 				if recovery_type == HEAVY_RECOVERY:
 					# heavy recovery steps
 					# MAKE TARGET_CX DEPENDANT ON ACTIVE_CY
-					distance_error = round(active_cy/250, 2)
+					if active_color == "red":
+						distance_error = round(active_cy/300, 2)
+					else:
+						distance_error = round(active_cy/200, 2)
 					target_cx = target_cx
 				error_avoid = active_cx - target_cx
 				if active_color == "green":
@@ -1768,12 +1616,9 @@ try:
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
 finally:
-	lidar_running = False
-	lidar_thread.join(timeout=1.0)
 	send_motor(default_motor_value)  # stop motor
 	send_servo(default_servo_value)    # center steering
 	send_led(LED_OFF)
 	cv2.destroyAllWindows()
 	picam2.stop()
 	arduino.close()
-	ser.close()
