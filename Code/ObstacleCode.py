@@ -9,7 +9,7 @@ ColorBias = True
 PositionRequired = True
 ForceDefault = False
 DOYELLOW = False
-DOEND = False
+DOEND = True
 start_run = True
 end_run = False
 start_step = 1
@@ -40,11 +40,20 @@ PACKET_HEADER = 0x54
 PACKET_LEN = 47
 read_lidar = True
 ser = serial.Serial(PORT, BAUD, timeout=0.1)
+d_0 = [None, 0]
+d_45 = [None, 0]
+d_90 = [None, 0]
+d_135 = [None, 0]
+d_180 = [None, 0]
 # Background LiDAR reader: A dedicated thread continuously
 # reads/parses the port and stores only the latest reading for each angle;
 # the main loop just copies whatever is current, never waiting on the port.
 lidar_lock = threading.Lock()
-lidar_data = [[None, 0] for _ in range(360)]
+_lidar_d_0 = [None, 0]
+_lidar_d_45 = [None, 0]
+_lidar_d_90 = [None, 0]
+_lidar_d_135 = [None, 0]
+_lidar_d_180 = [None, 0]
 lidar_running = True
 # LD19 CRC-8 table (standard LDROBOT checksum, poly 0x4D reflected)
 CRC_TABLE = [
@@ -130,10 +139,17 @@ def lidar_worker():
 			with lidar_lock:
 				for (dist, conf), angle in zip(parsed["points"], angles):
 					if conf > 0:
-						angle = 360-angle
-						angle = int(round(angle))
-						if 0 <= angle < 360:
-							lidar_data[angle] = [dist, conf]
+						if abs(angle - 0.0) < 0.3:
+							_lidar_d_0 = [dist, conf]
+						if abs(angle - 45.0) < 0.3:
+							_lidar_d_45 = [dist, conf]
+						if abs(angle -90.0) < 0.3:
+							_lidar_d_90 = [dist, conf]
+						if abs(angle - 135.0) < 0.3:
+							_lidar_d_135 = [dist, conf]
+						if abs(angle - 180.0) < 0.3:
+							_lidar_d_180 = [dist, conf]
+							
 lidar_thread = threading.Thread(target=lidar_worker, daemon=True)
 lidar_thread.start()
 # --- Arduino init ---
@@ -173,7 +189,7 @@ GYRO_TURN_VAL = 15
 relative_turn_heading = 0.0
 abs_turn_heading = 0.0
 MIN_NOISE_AREA = 300
-MIN_REACT_AREA = 700
+MIN_REACT_AREA = 1000
 MIN_PILLAR_Y = 100
 MAX_PILLAR_Y = 250
 RED_TARGET_CX = 90
@@ -586,7 +602,7 @@ def recovery(side, left_area, right_area, middle_area, time, old_time, last_x):
 			time_good = time_thresh > (MIN_RECOVERY_TIME+EXTRA_RECOVERY_TIME-leeway)
 			time_out = time_thresh > (MAX_RECOVERY_TIME+EXTRA_RECOVERY_TIME)
 			left_turn = TURN_LEFT_ANGLE - RECOVERY_CORRECTION 
-			right_turn = TURN_RIGHT_ANGLE + RECOVERY_CORRECTION*2
+			right_turn = TURN_RIGHT_ANGLE + RECOVERY_CORRECTION
 	if side == "left":
 		if recovery_type == LIGHT_RECOVERY:
 			if not past_pillar:
@@ -692,15 +708,15 @@ try:
 		kick = button.is_pressed
 		if not kickOverride:
 			if kick:
-				send_led(LED_RED)
+				lidar_running = False
+				lidar_thread.join(timeout=1.0)
 				send_motor(default_motor_value)  # stop motor
 				send_servo(default_servo_value)    # center steering
-				sleep(0.5)
 				send_led(LED_OFF)
 				cv2.destroyAllWindows()
 				picam2.stop()
 				arduino.close()
-				break
+				ser.close()
 		#print(servo_value,motor_value, lap_count, turn_count, turn_side, imu_heading, starting_heading, relative_heading, end_run, end_run_counter)
 		if arduino.in_waiting > 0:
 			arduino.reset_input_buffer()  # Throw away unread data from Arduino
@@ -758,13 +774,13 @@ try:
 		roiPillar = (0, 100, 640, 400)
 		pillar_crop = frame[roiPillar[1]:roiPillar[1]+roiPillar[3], roiPillar[0]:roiPillar[0]+roiPillar[2]]
 		hsv_frame = cv2.cvtColor(pillar_crop, cv2.COLOR_RGB2HSV) # CHANGE BACK TO RGB2HSV IF NESSCESARY 
-		lower_red = np.array([115, 120, 60]) # [115, 150, 70] # lab [0, 150, 60]
-		upper_red = np.array([130, 255, 255]) #[150, 255, 255] # lab [60, 180, 80] (might want to change to [130, 255, 255])
+		lower_red = np.array([110, 120, 60]) # [115, 150, 70] # lab [0, 150, 60]     110 120 60
+		upper_red = np.array([120, 255, 255]) #[150, 255, 255] # lab [60, 180, 80] (might want to change to [130, 255, 255]) 
 		mask_red = cv2.inRange(hsv_frame, lower_red, upper_red)
-		lower_green = np.array([30, 100, 0]) # [30, 120, 0] # lab [70, 85, 150]
-		upper_green = np.array([70, 255, 255]) # [70, 255, 255] # lab [100, 110 185]
+		lower_green = np.array([40, 100, 50]) # [30, 120, 0] # lab [70, 85, 150] # 40 , 100 50
+		upper_green = np.array([75, 255, 255]) # [70, 255, 255] # lab [100, 110 185] 75 255 255
 		mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
-		lower_pink = np.array([135, 175, 0]) #[135, 150, 70] lab [60, 160, 60] [130, 175, 0]
+		lower_pink = np.array([120, 175, 0]) #[135, 150, 70] lab [60, 160, 60] [130, 175, 0]
 		upper_pink = np.array([155, 255, 255])#[150, 255, 255] lab [90, 180, 90] [155, 255, 255]
 		mask_pink = cv2.inRange(hsv_frame, lower_pink, upper_pink)
 		lower_yellow = np.array([75, 100, 100]) #[75, 100, 100] lab [125, 80, 110]
@@ -817,45 +833,11 @@ try:
 					print(blind_start, blind_end)
 				continue
 				"""
-				d_0 = lidar_data[0]
-				#d_5 = lidar_data[5]
-				#d_10 = lidar_data[10]
-				#d_15 = lidar_data[15]
-				#d_20 = lidar_data[20]
-				d_25 = lidar_data[25]
-				#d_30 = lidar_data[30]
-				#d_35 = lidar_data[35]
-				#d_40 = lidar_data[40]
-				d_45 = lidar_data[45]
-				#d_50 = lidar_data[50]
-				#d_55 = lidar_data[55]
-				#d_60 = lidar_data[60]
-				#d_65 = lidar_data[65]
-				#d_70 = lidar_data[70]
-				#d_75 = lidar_data[75]
-				#d_80 = lidar_data[80]
-				#d_85 = lidar_data[85]
-				d_90 = lidar_data[90]
-				#d_95 = lidar_data[95]
-				#d_100 = lidar_data[100]
-				#d_105 = lidar_data[105]
-				#d_110 = lidar_data[110]
-				#d_115 = lidar_data[115]
-				#d_120 = lidar_data[120]
-				#d_125 = lidar_data[125]
-				#d_130 = lidar_data[130]
-				d_135 = lidar_data[135]
-				#d_140 = lidar_data[140]
-				#d_145 = lidar_data[145]
-				#d_150 = lidar_data[150]
-				#d_155 = lidar_data[155]
-				d_160 = lidar_data[160]
-				#d_165 = lidar_data[165]
-				#d_170 = lidar_data[170]
-				#d_175 = lidar_data[175]
-				d_180 = lidar_data[180]
-				d_210 = lidar_data[210]# (180 + 30)
-				d_330 = lidar_data[330]# (360 - 30)
+				d_0 = list(_lidar_d_0)
+				d_45 = list(_lidar_d_45)
+				d_90 = list(_lidar_d_90)
+				d_135 = list(_lidar_d_135)
+				d_180 = list(_lidar_d_180)
 		#print("Active Color: ", active_color,"\nRed Size: ", red_area,"\nRed CX, CY: ", [red_cx, red_cy], "\nGreen Size: ", green_area, "n\Green CX, CY: ", [green_cx, green_cy])ing from arduino
 		if time.time()-last_heading_time >= heading_interval:
 			get_heading()
@@ -1515,11 +1497,11 @@ try:
 					if error_avoid < 0:
 						# Green pillar is left of target.
 						# Initial response: weaker
-						correction = int(kp_avoid * 0.5 * error_avoid) * distance_error
+						correction = int(kp_avoid * 1 * error_avoid) * distance_error
 					else:
 						# Green pillar is right of target.
 						# Strong response to bring it back.
-						correction = int(kp_avoid * 4.0 * error_avoid) * distance_error
+						correction = int(kp_avoid * 1 * error_avoid) * distance_error
 				elif active_color == "red":
 					if error_avoid > 0 and not OverrideRed:
 						# Red pillar is right of target.
@@ -1786,12 +1768,12 @@ try:
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
 finally:
+	lidar_running = False
+	lidar_thread.join(timeout=1.0)
 	send_motor(default_motor_value)  # stop motor
 	send_servo(default_servo_value)    # center steering
 	send_led(LED_OFF)
 	cv2.destroyAllWindows()
 	picam2.stop()
 	arduino.close()
-	lidar_running = False
-	lidar_thread.join(timeout=1.0)
 	ser.close()
